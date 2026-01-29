@@ -11,13 +11,13 @@ type PendingUser = {
 }
 
 export default function AdminDashboard() {
-  const supabase = createClient()
   const router = useRouter()
 
   const [users, setUsers] = useState<PendingUser[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const supabase = createClient()
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -48,9 +48,10 @@ export default function AdminDashboard() {
     }
 
     loadData()
-  }, [router, supabase])
+  }, [router])
 
   const approveUser = async (id: string, role: string) => {
+    const supabase = createClient()
     await supabase
       .from('profiles')
       .update({ status: 'active', role })
@@ -60,6 +61,7 @@ export default function AdminDashboard() {
   }
 
   const rejectUser = async (id: string) => {
+    const supabase = createClient()
     await supabase
       .from('profiles')
       .update({ status: 'rejected' })

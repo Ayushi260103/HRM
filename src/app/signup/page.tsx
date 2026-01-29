@@ -174,9 +174,15 @@ export default function SignupPage() {
       return
     }
 
+    if (!data?.user?.id) {
+      setError('Check your email to confirm your account.')
+      setLoading(false)
+      return
+    }
+
     // Create profile as pending approval
     await supabase.from('profiles').insert({
-      id: data.user?.id,
+      id: data.user.id,
       role: null,
       status: 'pending',
     })

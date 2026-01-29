@@ -7,13 +7,13 @@ import { useEffect, useState } from 'react'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const supabase = createClient()
 
   const [email, setEmail] = useState<string | null>(null)
   const [role, setRole] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const supabase = createClient()
     const checkAccess = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -47,9 +47,10 @@ export default function DashboardPage() {
     }
 
     checkAccess()
-  }, [router, supabase])
+  }, [router])
 
   async function handleLogout() {
+    const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
