@@ -82,7 +82,7 @@ if (profileError) {
 // This creates a lookup object (profileMap) where each user's id is the key and their profile data is the value.
 // It makes it easy and fast to access profile information for a given user_id later.
 const profileMap = Object.fromEntries(
-  (profiles || []).map(p => [p.id, p])
+(profiles || []).map(p => [p.id, p])
 )
 if (attendance.length === 0) {
     setLogs([])
