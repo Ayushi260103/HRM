@@ -144,6 +144,7 @@ import { createClient } from '@/lib/supabase/client'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
+  const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -180,12 +181,26 @@ export default function SignupPage() {
       return
     }
 
-    // Create profile as pending approval
-    await supabase.from('profiles').insert({
-      id: data.user.id,
-      role: null,
-      status: 'pending',
-    })
+    // Create or update profile as pending approval (upsert in case a DB trigger already created a row)
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert(
+        {
+          id: data.user.id,
+          full_name: fullName.trim() || null,
+          email_id: email.trim() || null,
+          role: null,
+          status: 'pending',
+        },
+        { onConflict: 'id' }
+      )
+
+    if (profileError) {
+      console.error('Profile error:', profileError)
+      setError(profileError.message || 'Account created but profile setup failed.')
+      setLoading(false)
+      return
+    }
 
     setLoading(false)
     router.push('/pending-approval')
@@ -207,6 +222,14 @@ export default function SignupPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="text"
+              placeholder="Full name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full border px-3 py-2 rounded-md"
+              autoComplete="name"
+            />
             <input
               type="email"
               placeholder="Email"
