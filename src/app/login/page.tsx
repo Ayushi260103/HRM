@@ -1,43 +1,76 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-    const supabase = createClient()
-    // This line attempts to sign the user in with their email and password using Supabase authentication.
-    // The signInWithPassword method returns an object containing an error field if sign-in fails.
-    // If the credentials are valid, error will be null; otherwise, it will contain the error details.
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    const { data: { session } } = await supabase.auth.getSession()
-    console.log("JWT ROLE:", session?.user?.app_metadata)
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
+      if (signInError) {
+        setError(signInError.message || 'Invalid credentials');
+        setLoading(false);
+        return;
+      }
 
-    setLoading(false)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not found');
 
-    if (signInError) {
-      setError(signInError.message || 'Invalid credentials')
-      return
+      // Check user status and profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('status, role, full_name')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile) {
+        router.push('/profile-completion');
+        return;
+      }
+
+      // Check status
+      if (profile.status === 'rejected') {
+        setError('Your account has been rejected. Please contact admin.');
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+
+      if (profile.status === 'pending') {
+        router.push('/pending-approval');
+        return;
+      }
+
+      // Status is 'active' - check if profile is complete
+      if (!profile.full_name) {
+        router.push('/profile-completion');
+        return;
+      }
+
+      // Redirect to dashboard (role-based routing handled there)
+      router.push('/dashboard');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setLoading(false);
     }
-
-    router.push('/dashboard')
-    router.refresh()
   }
 
   return (

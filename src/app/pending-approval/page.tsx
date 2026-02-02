@@ -1,37 +1,93 @@
-'use client'
+'use client';
 
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function PendingApprovalPage() {
-  const router = useRouter()
+  const router = useRouter();
+  const supabase = createClient();
+  const [email, setEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          router.replace('/login');
+          return;
+        }
+
+        setEmail(user.email?? null);
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('status')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.status === 'active') {
+          router.replace('/dashboard/employee');
+          return;
+        }
+
+        if (profile?.status === 'rejected') {
+          router.replace('/login');
+          return;
+        }
+      } catch (err) {
+        console.error('Error checking status:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkStatus();
+    
+    // Poll for status changes every 5 seconds
+    const interval = setInterval(checkStatus, 5000);
+    return () => clearInterval(interval);
+  }, [router, supabase]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
 
   async function handleLogout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    await supabase.auth.signOut();
+    router.push('/login');
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-          HRM
-        </h1>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
+        <div className="mb-6">
+          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">⏳</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Pending Approval</h1>
+        </div>
+
+        <p className="text-gray-600 mb-2">
+          Your account is awaiting admin approval.
+        </p>
+        <p className="text-sm text-gray-500 mb-6">
+          Email: <strong>{email}</strong>
+        </p>
+
+        <p className="text-gray-600 mb-6">
+          We'll notify you once your account has been approved. This typically takes 1-2 business days.
+        </p>
+
         <button
-          type="button"
           onClick={handleLogout}
-          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+          className="w-full bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-700"
         >
           Log out
         </button>
-      </header>
-      <main className="flex-1 flex items-center justify-center p-6">
-        <p className="text-center text-gray-700 dark:text-gray-300">
-          Your approval is pending, wait til it gets approved.
-        </p>
-      </main>
+      </div>
     </div>
-  )
+  );
 }

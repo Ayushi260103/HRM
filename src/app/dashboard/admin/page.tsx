@@ -2,23 +2,25 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-
-type PendingUser = {
-  id: string
-  full_name: string | null
-  created_at: string
-}
+import Sidebar from '@/components/Sidebar'
+import Notifications from '@/components/Notifications'
 
 export default function AdminDashboard() {
   const router = useRouter()
 
-  const [users, setUsers] = useState<PendingUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [email, setEmail] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [clockInTime, setClockInTime] = useState<string | null>(null)
+  const [clockOutTime, setClockOutTime] = useState<string | null>(null)
+  const [logId, setLogId] = useState<string | null>(null)
+  const [loadingAttendance, setLoadingAttendance] = useState(true)
+
+  const supabase = createClient()
 
   useEffect(() => {
-    const supabase = createClient()
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -27,9 +29,12 @@ export default function AdminDashboard() {
         return
       }
 
+      setEmail(user.email ?? null)
+      setUserId(user.id)
+
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, full_name')
         .eq('id', user.id)
         .single()
 
@@ -38,96 +43,159 @@ export default function AdminDashboard() {
         return
       }
 
-      const { data: pendingUsers } = await supabase
-        .from('profiles')
-        .select('id, full_name, created_at')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true })
-
-      setUsers(pendingUsers || [])
+      setUserName(profile?.full_name ?? null)
       setLoading(false)
     }
 
     loadData()
-  }, [router])
+  }, [router, supabase])
 
-  const approveUser = async (id: string, role: string) => {
-    const supabase = createClient()
-    await supabase
-      .from('profiles')
-      .update({ status: 'active', role })
-      .eq('id', id)
+  // Load today's attendance
+  useEffect(() => {
+    const loadAttendance = async () => {
+      if (!userId) return
 
-    setUsers(users.filter(user => user.id !== id))
+      const today = new Date().toISOString().split('T')[0]
+      const { data } = await supabase
+        .from('attendance_logs')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('clock_in', today)
+        .lte('clock_in', today + 'T23:59:59')
+        .order('clock_in', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (data) {
+        setLogId(data.id)
+        setClockInTime(data.clock_in)
+        setClockOutTime(data.clock_out)
+      }
+      setLoadingAttendance(false)
+    }
+
+    loadAttendance()
+  }, [userId, supabase])
+
+  const handleClockIn = async () => {
+    if (!userId) return
+
+    const { data, error } = await supabase
+      .from('attendance_logs')
+      .insert([{ user_id: userId }])
+      .select()
+      .single()
+
+    if (!error && data) {
+      setLogId(data.id)
+      setClockInTime(data.clock_in)
+    }
   }
 
-  const rejectUser = async (id: string) => {
-    const supabase = createClient()
-    await supabase
-      .from('profiles')
-      .update({ status: 'rejected' })
-      .eq('id', id)
+  const handleClockOut = async () => {
+    if (!logId) return
 
-    setUsers(users.filter(user => user.id !== id))
+    const { data, error } = await supabase
+      .from('attendance_logs')
+      .update({ clock_out: new Date().toISOString() })
+      .eq('id', logId)
+      .select()
+      .single()
+
+    if (!error && data) {
+      setClockOutTime(data.clock_out)
+    }
   }
 
-  if (loading) return <p className="p-6">Loading requests...</p>
+  const formatTime = (time: string | null) =>
+    time ? new Date(time).toLocaleTimeString() : '--'
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading dashboard...</p></div>
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center gap-4 mb-6">
-        <Link
-          href="/dashboard"
-          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        >
-          ← Back to dashboard
-        </Link>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Sidebar userEmail={email} userName={userName} role="admin" />
+
+      {/* Notification Bell */}
+      <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-8">
+        {userId && <Notifications role="admin" userId={userId} />}
       </div>
-      <h1 className="text-2xl font-semibold mb-6">Pending User Approvals</h1>
 
-      {users.length === 0 && (
-        <p className="text-gray-500">No pending requests 🎉</p>
-      )}
-
-      <div className="space-y-4">
-        {users.map(user => (
-          <div key={user.id} className="p-4 border rounded-lg bg-white dark:bg-gray-900 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="font-medium">{user.full_name || 'No name provided'}</p>
-              <p className="text-sm text-gray-500">User ID: {user.id}</p>
-            </div>
-
-            <div className="flex gap-2 items-center">
-              <select
-                defaultValue="employee"
-                id={`role-${user.id}`}
-                className="border rounded px-2 py-1 text-sm"
-              >
-                <option value="employee">Employee</option>
-                <option value="hr">HR</option>
-                <option value="admin">Admin</option>
-              </select>
-
-              <button
-                onClick={() => {
-                  const role = (document.getElementById(`role-${user.id}`) as HTMLSelectElement).value
-                  approveUser(user.id, role)
-                }}
-                className="bg-green-600 text-white px-3 py-1 rounded text-sm"
-              >
-                Approve
-              </button>
-
-              <button
-                onClick={() => rejectUser(user.id)}
-                className="bg-red-600 text-white px-3 py-1 rounded text-sm"
-              >
-                Reject
-              </button>
-            </div>
+      <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
+        <div className="w-full max-w-4xl">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600 mt-2">Welcome back, {userName || 'Admin'}</p>
           </div>
-        ))}
-      </div>
+
+          {/* Clock In/Out Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">⏰ Clock In / Clock Out</h2>
+            {loadingAttendance ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">Loading attendance...</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
+                    <p className="text-sm font-semibold text-blue-700 uppercase tracking-wide mb-2">Clock In Time</p>
+                    <p className="text-4xl font-bold text-blue-900">{formatTime(clockInTime)}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200">
+                    <p className="text-sm font-semibold text-purple-700 uppercase tracking-wide mb-2">Clock Out Time</p>
+                    <p className="text-4xl font-bold text-purple-900">{formatTime(clockOutTime)}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {!clockInTime && (
+                    <button
+                      onClick={handleClockIn}
+                      className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg text-lg"
+                    >
+                      🟢 Clock In
+                    </button>
+                  )}
+                  {clockInTime && !clockOutTime && (
+                    <button
+                      onClick={handleClockOut}
+                      className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-4 rounded-lg font-semibold hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg text-lg"
+                    >
+                      🔴 Clock Out
+                    </button>
+                  )}
+                  {clockOutTime && (
+                    <div className="flex-1 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 text-center">
+                      <p className="text-green-700 font-bold text-lg">✅ Shift Completed</p>
+                      <p className="text-green-600 text-sm mt-1">Good work today!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Links */}
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="/dashboard/admin/pending" className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-blue-300 transition-all">
+              <div className="text-3xl mb-2">📋</div>
+              <h3 className="font-semibold text-gray-900 text-sm">Pending Requests</h3>
+              <p className="text-xs text-gray-600 mt-1">Review user approvals</p>
+            </a>
+            <a href="/dashboard/admin/employees" className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-blue-300 transition-all">
+              <div className="text-3xl mb-2">👥</div>
+              <h3 className="font-semibold text-gray-900 text-sm">All Employees</h3>
+              <p className="text-xs text-gray-600 mt-1">View all profiles</p>
+            </a>
+            <a href="/dashboard/admin/attendance" className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-blue-300 transition-all">
+              <div className="text-3xl mb-2">📅</div>
+              <h3 className="font-semibold text-gray-900 text-sm">Attendance</h3>
+              <p className="text-xs text-gray-600 mt-1">Track all records</p>
+            </a>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

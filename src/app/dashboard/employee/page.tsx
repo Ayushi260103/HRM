@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import Sidebar from '@/components/Sidebar';
+import Notifications from '@/components/Notifications';
 
 interface EmployeeProfile {
   id: string;
@@ -21,7 +23,6 @@ interface EmployeeProfile {
 export default function EmployeeDashboard() {
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'profile' | 'attendance'>('profile');
   const [email, setEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [loadingAttendance, setLoadingAttendance] = useState(true);
@@ -135,12 +136,6 @@ export default function EmployeeDashboard() {
     }
   };
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  }
-
   const formatTime = (time: string | null) =>
     time ? new Date(time).toLocaleTimeString() : '--';
 
@@ -148,122 +143,69 @@ export default function EmployeeDashboard() {
   if (!profile) return <div className="p-8">Redirecting...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-700">
-            ← Dashboards
-          </Link>
-          <h1 className="text-xl font-semibold">HRM</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          {email && <span className="text-sm text-gray-500">{email}</span>}
-          <button onClick={handleLogout} className="text-sm text-gray-600 hover:text-gray-900">
-            Log out
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Sidebar userEmail={email} userName={profile.full_name} avatarUrl={profile.avatar_url} role="employee" />
 
-      <main className="p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold">Employee Dashboard</h1>
-            <div className="flex items-center gap-4">
-              {profile.avatar_url && (
-                <Image
-                  src={profile.avatar_url}
-                  alt={profile.full_name}
-                  width={48}
-                  height={48}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-              )}
-              <div>
-                <p className="font-semibold">{profile.full_name}</p>
-                <p className="text-sm text-gray-600">{profile.position}</p>
-              </div>
-            </div>
+      {/* Notification Bell */}
+      <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-8">
+        {userId && <Notifications role="employee" userId={userId} />}
+      </div>
+
+      <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
+        <div className="w-full max-w-4xl">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Employee Dashboard</h1>
+            <p className="text-gray-600 mt-2">Manage your profile and track attendance</p>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="flex border-b">
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`flex-1 py-4 px-6 font-semibold text-center ${
-                  activeTab === 'profile'
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Profile
-              </button>
-              <button
-                onClick={() => setActiveTab('attendance')}
-                className={`flex-1 py-4 px-6 font-semibold text-center ${
-                  activeTab === 'attendance'
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Clock In / Clock Out
-              </button>
-            </div>
-          </div>
-
-          {/* Tab Content */}
-          {activeTab === 'profile' && (
-            <Link href="/dashboard/employee/profile">
-              <div className="bg-white rounded-lg shadow-md p-8 cursor-pointer hover:shadow-lg transition">
-                <p className="text-gray-600 mb-4">View and manage your profile information</p>
-                <button className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-                  Go to Profile →
-                </button>
-              </div>
-            </Link>
-          )}
-
-          {activeTab === 'attendance' && (
-            <div className="bg-white rounded-lg shadow-md p-8 space-y-4">
-              <h3 className="text-lg font-semibold">Today&apos;s Attendance</h3>
+          {/* Clock In / Out Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Today&apos;s Attendance</h3>
 
               {loadingAttendance ? (
-                <p className="text-sm text-gray-500">Loading attendance...</p>
+                <p className="text-gray-500 text-center py-8">Loading attendance records...</p>
               ) : (
-                <>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p>Clock In: <strong>{formatTime(clockInTime)}</strong></p>
-                    <p>Clock Out: <strong>{formatTime(clockOutTime)}</strong></p>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-2">Clock In Time</p>
+                      <p className="text-2xl font-bold text-gray-900">{formatTime(clockInTime)}</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-2">Clock Out Time</p>
+                      <p className="text-2xl font-bold text-gray-900">{formatTime(clockOutTime)}</p>
+                    </div>
                   </div>
 
-                  {!clockInTime && (
-                    <button
-                      onClick={handleClockIn}
-                      className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"
-                    >
-                      Clock In
-                    </button>
-                  )}
+                  <div className="flex gap-4">
+                    {!clockInTime && (
+                      <button
+                        onClick={handleClockIn}
+                        className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                      >
+                        🟢 Clock In
+                      </button>
+                    )}
 
-                  {clockInTime && !clockOutTime && (
-                    <button
-                      onClick={handleClockOut}
-                      className="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700"
-                    >
-                      Clock Out
-                    </button>
-                  )}
+                    {clockInTime && !clockOutTime && (
+                      <button
+                        onClick={handleClockOut}
+                        className="flex-1 bg-red-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                      >
+                        🔴 Clock Out
+                      </button>
+                    )}
 
-                  {clockOutTime && (
-                    <p className="text-green-600 text-sm font-medium">
-                      Shift completed ✅
-                    </p>
-                  )}
-                </>
+                    {clockOutTime && (
+                      <div className="flex-1 bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                        <p className="text-green-700 font-semibold">✅ Shift Completed</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-          )}
-        </div>
+          </div>
       </main>
     </div>
   );

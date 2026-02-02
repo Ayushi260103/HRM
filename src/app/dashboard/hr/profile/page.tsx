@@ -100,7 +100,7 @@ export default function EmployeeProfilePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Sidebar userEmail={email} userName={profile.full_name} avatarUrl={profile.avatar_url} role="employee" />
+      <Sidebar userEmail={email} userName={profile.full_name} avatarUrl={profile.avatar_url} role="hr" />
 
       <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
         <div className="w-full max-w-2xl">

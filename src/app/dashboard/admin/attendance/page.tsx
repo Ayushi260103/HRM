@@ -114,7 +114,7 @@ setLoading(false)
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50">
-            <Sidebar userEmail={email} userName={userName} role="hr" />
+            <Sidebar userEmail={email} userName={userName} role="admin" />
 
             <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
                 <div className="w-full max-w-7xl">
