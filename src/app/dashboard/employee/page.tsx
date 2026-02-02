@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
 import Sidebar from '@/components/Sidebar';
 import Notifications from '@/components/Notifications';
 

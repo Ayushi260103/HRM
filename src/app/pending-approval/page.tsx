@@ -20,7 +20,7 @@ export default function PendingApprovalPage() {
           return;
         }
 
-        setEmail(user.email?? null);
+        setEmail(user.email ?? null);
 
         const { data: profile } = await supabase
           .from('profiles')
@@ -45,7 +45,7 @@ export default function PendingApprovalPage() {
     };
 
     checkStatus();
-    
+
     // Poll for status changes every 5 seconds
     const interval = setInterval(checkStatus, 5000);
     return () => clearInterval(interval);
@@ -78,7 +78,7 @@ export default function PendingApprovalPage() {
         </p>
 
         <p className="text-gray-600 mb-6">
-          We'll notify you once your account has been approved. This typically takes 1-2 business days.
+          We&apos;ll notify you once your account has been approved. This typically takes 1-2 business days.
         </p>
 
         <button

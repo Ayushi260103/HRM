@@ -20,6 +20,7 @@ type LeaveRequest = {
     email_id: string | null
   } | null
 }
+type FilterType = 'all' | 'pending' | 'approved' | 'rejected'
 
 const LEAVE_TYPES = {
   half_day: 'Half Day Leave',
@@ -208,7 +209,7 @@ export default function HRLeavesPage() {
               {['all', 'pending', 'approved', 'rejected'].map(f => (
                 <button
                   key={f}
-                  onClick={() => setFilter(f as any)}
+                  onClick={() => setFilter(f as FilterType)}
                   className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                     filter === f
                       ? 'bg-blue-600 text-white'

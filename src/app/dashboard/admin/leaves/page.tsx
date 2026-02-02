@@ -208,7 +208,7 @@ export default function AdminLeavesPage() {
               {['all', 'pending', 'approved', 'rejected'].map(f => (
                 <button
                   key={f}
-                  onClick={() => setFilter(f as any)}
+                  onClick={() => setFilter(f as 'all' | 'pending' | 'approved' | 'rejected')}
                   className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                     filter === f
                       ? 'bg-blue-600 text-white'

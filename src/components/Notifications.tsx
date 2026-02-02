@@ -13,6 +13,18 @@ interface Notification {
   message: string
 }
 
+interface DbNotification {
+  id: string
+  message: string
+  created_at: string
+  role_target: 'admin' | 'hr' | 'employee' | null
+  for_user: string | null
+}
+
+interface NotificationRead {
+  notification_id: string
+}
+
 export default function Notifications({ role, userId }: NotificationsProps) {
   const supabase = createClient()
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -23,7 +35,6 @@ export default function Notifications({ role, userId }: NotificationsProps) {
     if (!userId) return
     const loadUnreadNotifications = async () => {
       try {
-        // 1) fetch notifications targeted to this role or this user
         const roleFilter = role ? `role_target.eq.${role}` : ''
         const userFilter = `for_user.eq.${userId}`
 
@@ -32,18 +43,19 @@ export default function Notifications({ role, userId }: NotificationsProps) {
           .select('*')
           .or(`${roleFilter},${userFilter}`)
           .order('created_at', { ascending: false })
+          .returns<DbNotification[]>()
 
-        // 2) fetch reads for this user
         const { data: reads } = await supabase
           .from('notification_reads')
           .select('notification_id')
           .eq('user_id', userId)
+          .returns<NotificationRead[]>()
 
-        const readIds = new Set((reads || []).map((r: any) => r.notification_id))
+        const readIds = new Set((reads || []).map(r => r.notification_id))
 
         const unread: Notification[] = (notificationsData || [])
-          .filter((n: any) => !readIds.has(n.id))
-          .map((n: any) => ({ id: n.id, message: n.message }))
+          .filter(n => !readIds.has(n.id))
+          .map(n => ({ id: n.id, message: n.message }))
 
         setNotifications(unread)
         setUnreadCount(unread.length)
@@ -53,53 +65,43 @@ export default function Notifications({ role, userId }: NotificationsProps) {
     }
 
     loadUnreadNotifications()
-
     const interval = setInterval(loadUnreadNotifications, 30000)
-
     return () => clearInterval(interval)
   }, [role, userId, supabase])
 
   return (
     <div className="relative">
-      {/* Bell Icon Button */}
       <button
         onClick={async () => {
-          // toggle dropdown; when opening, show; when closing, mark unread as read for this user
-            if (showDropdown) {
-              setShowDropdown(false)
-              try {
-                if (notifications.length > 0) {
-                  const rows = notifications.map(n => ({ notification_id: n.id, user_id: userId }))
-                  await supabase.from('notification_reads').insert(rows)
-                }
-              } catch (e) {
-                // ignore duplicate errors
+          if (showDropdown) {
+            setShowDropdown(false)
+            try {
+              if (notifications.length > 0) {
+                const rows = notifications.map(n => ({ notification_id: n.id, user_id: userId }))
+                await supabase.from('notification_reads').insert(rows)
               }
-              setNotifications([])
-              setUnreadCount(0)
-            } else {
-              setShowDropdown(true)
-              // mark as read immediately when opened, but keep notifications visible
-              try {
-                if (notifications.length > 0) {
-                  const rows = notifications.map(n => ({ notification_id: n.id, user_id: userId }))
-                  await supabase.from('notification_reads').insert(rows)
-                  setUnreadCount(0)
-                }
-              } catch (e) {
-                // ignore duplicate errors
-              }
+            } catch {
+              // ignore duplicate errors
             }
+            setNotifications([])
+            setUnreadCount(0)
+          } else {
+            setShowDropdown(true)
+            try {
+              if (notifications.length > 0) {
+                const rows = notifications.map(n => ({ notification_id: n.id, user_id: userId }))
+                await supabase.from('notification_reads').insert(rows)
+                setUnreadCount(0)
+              }
+            } catch {
+              // ignore duplicate errors
+            }
+          }
         }}
         className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all"
         title="Notifications"
       >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -108,7 +110,6 @@ export default function Notifications({ role, userId }: NotificationsProps) {
           />
         </svg>
 
-        {/* Notification Count Badge */}
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -116,10 +117,8 @@ export default function Notifications({ role, userId }: NotificationsProps) {
         )}
       </button>
 
-      {/* Notification Dropdown */}
       {showDropdown && (
         <>
-          {/* Overlay */}
           <div
             className="fixed inset-0 z-40"
             onClick={() => {
@@ -128,7 +127,6 @@ export default function Notifications({ role, userId }: NotificationsProps) {
             }}
           />
 
-          {/* Dropdown Menu */}
           <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
             <div className="p-4 border-b border-gray-200 bg-gray-50 sticky top-0">
               <h3 className="font-bold text-gray-900">Notifications</h3>
@@ -155,7 +153,7 @@ export default function Notifications({ role, userId }: NotificationsProps) {
                   />
                 </svg>
                 <p className="text-gray-500 font-medium">No notifications</p>
-                <p className="text-gray-400 text-sm mt-1">You're all caught up!</p>
+                <p className="text-gray-400 text-sm mt-1">You&apos;re all caught up!</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
@@ -175,4 +173,3 @@ export default function Notifications({ role, userId }: NotificationsProps) {
     </div>
   )
 }
-
