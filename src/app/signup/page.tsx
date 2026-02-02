@@ -164,7 +164,7 @@ export default function SignupPage() {
     setLoading(true)
     const supabase = createClient()
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     })
@@ -174,8 +174,11 @@ export default function SignupPage() {
       setLoading(false)
       return
     }
+// Ensure session exists before touching DB
+const { data: sessionData } = await supabase.auth.getSession()
+const user = sessionData.session?.user
 
-    if (!data?.user?.id) {
+    if (!user) {
       setError('Check your email to confirm your account.')
       setLoading(false)
       return
@@ -186,7 +189,7 @@ export default function SignupPage() {
       .from('profiles')
       .upsert(
         {
-          id: data.user.id,
+          id: user.id,
           full_name: fullName.trim() || null,
           email_id: email.trim() || null,
           role: null,

@@ -25,6 +25,9 @@ export default function LoginPage() {
       email,
       password,
     })
+    const { data: { session } } = await supabase.auth.getSession()
+    console.log("JWT ROLE:", session?.user?.app_metadata)
+
 
     setLoading(false)
 
