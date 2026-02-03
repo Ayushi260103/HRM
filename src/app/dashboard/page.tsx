@@ -43,6 +43,21 @@ export default function DashboardPage() {
         router.replace('/pending-approval')
         return
       }
+      if (profile.role === 'admin') {
+        
+        router.replace('/dashboard/admin')
+        return
+      }
+      if (profile.role === 'hr') {
+        
+        router.replace('/dashboard/hr ')
+        return
+      }
+      if (profile.role === 'employee') {
+        
+        router.replace('/dashboard/employee')
+        return
+      }
 
       setUserName(profile.full_name)
       setRole(profile.role)

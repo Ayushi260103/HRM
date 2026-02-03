@@ -81,12 +81,20 @@ export default function EmployeeDashboard() {
     if (!userId) return;
 
     const loadAttendance = async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const getLocalDayRange = () => {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        return { startISO: start.toISOString(), endISO: end.toISOString() };
+      };
+
+      const { startISO, endISO } = getLocalDayRange();
       const { data } = await supabase
         .from('attendance_logs')
         .select('*')
         .eq('user_id', userId)
-        .gte('clock_in', today)
+        .gte('clock_in', startISO)
+        .lt('clock_in', endISO)
         .order('clock_in', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -95,6 +103,10 @@ export default function EmployeeDashboard() {
         setLogId(data.id);
         setClockInTime(data.clock_in);
         setClockOutTime(data.clock_out);
+      } else {
+        setLogId(null);
+        setClockInTime(null);
+        setClockOutTime(null);
       }
       setLoadingAttendance(false);
     };
@@ -134,8 +146,13 @@ export default function EmployeeDashboard() {
     }
   };
 
+  const parseSupabaseTime = (time: string) => {
+    const hasTz = /[zZ]|[+-]\d{2}:\d{2}$/.test(time);
+    return new Date(hasTz ? time : `${time}Z`);
+  };
+
   const formatTime = (time: string | null) =>
-    time ? new Date(time).toLocaleTimeString() : '--';
+    time ? parseSupabaseTime(time).toLocaleTimeString() : '--';
 
   if (loading) return <div className="p-8">Loading dashboard...</div>;
   if (!profile) return <div className="p-8">Redirecting...</div>;

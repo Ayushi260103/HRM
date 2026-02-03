@@ -51,31 +51,51 @@ export default function AdminDashboard() {
   }, [router, supabase])
 
   // Load today's attendance
-  useEffect(() => {
-    const loadAttendance = async () => {
-      if (!userId) return
-
-      const today = new Date().toISOString().split('T')[0]
-      const { data } = await supabase
-        .from('attendance_logs')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('clock_in', today)
-        .lte('clock_in', today + 'T23:59:59')
-        .order('clock_in', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (data) {
-        setLogId(data.id)
-        setClockInTime(data.clock_in)
-        setClockOutTime(data.clock_out)
+  
+      const getLocalDayRange = () => {
+        const now = new Date()
+      
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      
+        return {
+          startISO: start.toISOString(),
+          endISO: end.toISOString(),
+        }
       }
-      setLoadingAttendance(false)
+useEffect(() => {
+  const loadAttendance = async () => {
+    if (!userId) return
+
+    const { startISO, endISO } = getLocalDayRange()
+
+    const { data } = await supabase
+      .from('attendance_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('clock_in', startISO)
+      .lt('clock_in', endISO)
+      .order('clock_in', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (data) {
+      setLogId(data.id)
+      setClockInTime(data.clock_in)
+      setClockOutTime(data.clock_out)
+    } else {
+      // ✅ NEW DAY → RESET STATE
+      setLogId(null)
+      setClockInTime(null)
+      setClockOutTime(null)
     }
 
-    loadAttendance()
-  }, [userId, supabase])
+    setLoadingAttendance(false)
+  }
+
+  loadAttendance()
+}, [userId, supabase])
+
 
   const handleClockIn = async () => {
     if (!userId) return
@@ -107,8 +127,19 @@ export default function AdminDashboard() {
     }
   }
 
+  const parseSupabaseTime = (time: string) => {
+    const hasTz = /[zZ]|[+-]\d{2}:\d{2}$/.test(time)
+    return new Date(hasTz ? time : `${time}Z`)
+  }
+
   const formatTime = (time: string | null) =>
-    time ? new Date(time).toLocaleTimeString() : '--'
+    time
+      ? parseSupabaseTime(time).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : '--'
+  
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading dashboard...</p></div>
 

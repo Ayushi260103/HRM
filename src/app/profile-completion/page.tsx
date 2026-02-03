@@ -174,7 +174,22 @@ export default function ProfileCompletionPage() {
 
       if (updateError) throw updateError;
 
-      router.push('/dashboard/employee');
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      if(profile.role === 'employee'){
+        router.push('/dashboard/employee');
+      } else if(profile.role === 'hr'){
+        router.push('/dashboard/hr');
+      } else {
+        router.push('/dashboard/admin');
+      }
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save profile');
     } finally {

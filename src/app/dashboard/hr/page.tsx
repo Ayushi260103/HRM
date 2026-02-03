@@ -61,21 +61,32 @@ export default function HRDashboardPage() {
     const loadAttendance = async () => {
       if (!userId) return
 
-      const today = new Date().toISOString().split('T')[0]
+      const getLocalDayRange = () => {
+        const now = new Date()
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+        return { startISO: start.toISOString(), endISO: end.toISOString() }
+      }
+
+      const { startISO, endISO } = getLocalDayRange()
       const { data } = await supabase
         .from('attendance_logs')
         .select('*')
         .eq('user_id', userId)
-        .gte('clock_in', today)
-        .lte('clock_in', today + 'T23:59:59')
+        .gte('clock_in', startISO)
+        .lt('clock_in', endISO)
         .order('clock_in', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
       if (data) {
         setLogId(data.id)
         setClockInTime(data.clock_in)
         setClockOutTime(data.clock_out)
+      } else {
+        setLogId(null)
+        setClockInTime(null)
+        setClockOutTime(null)
       }
       setLoadingAttendance(false)
     }
@@ -113,8 +124,13 @@ export default function HRDashboardPage() {
     }
   }
 
+  const parseSupabaseTime = (time: string) => {
+    const hasTz = /[zZ]|[+-]\d{2}:\d{2}$/.test(time)
+    return new Date(hasTz ? time : `${time}Z`)
+  }
+
   const formatTime = (time: string | null) =>
-    time ? new Date(time).toLocaleTimeString() : '--'
+    time ? parseSupabaseTime(time).toLocaleTimeString() : '--'
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Checking access...</p></div>
 
