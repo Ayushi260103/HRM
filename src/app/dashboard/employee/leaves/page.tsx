@@ -8,28 +8,28 @@ import Sidebar from '@/components/Sidebar'
 type LeaveRequest = {
     id: string
     user_id: string
-    leave_type: string
+    leave_type_id: string
     reason: string
     start_date: string
     end_date: string
     comment: string | null
     status: 'pending' | 'approved' | 'rejected'
     created_at: string
+    leave_type?: {
+        name: string
+    } | null
+}
+
+type LeaveType = {
+    id: string
+    name: string
+    default_balance: number | null
 }
 
 type LeaveBalance = {
-    half_day_total: number
-    half_day_used: number
-    medical_total: number
-    medical_used: number
-    casual_total: number
-    casual_used: number
-}
-
-const LEAVE_TYPES = {
-    half_day: { label: 'Half Day Leave', total: 24 },
-    medical: { label: 'Medical Leave', total: 5 },
-    casual: { label: 'Casual Leave', total: 11 }
+    leave_type_id: string
+    allocated: number | null
+    used: number | null
 }
 
 export default function LeavesPage() {
@@ -41,18 +41,12 @@ export default function LeavesPage() {
     const [userId, setUserId] = useState<string | null>(null)
 
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([])
-    const [leaveBalance, setLeaveBalance] = useState<LeaveBalance>({
-        half_day_total: 24,
-        half_day_used: 0,
-        medical_total: 5,
-        medical_used: 0,
-        casual_total: 11,
-        casual_used: 0
-    })
+    const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([])
+    const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([])
 
     const [showForm, setShowForm] = useState(false)
     const [formData, setFormData] = useState({
-        leave_type: 'half_day',
+        leave_type_id: '',
         reason: '',
         start_date: '',
         end_date: ''
@@ -85,28 +79,40 @@ export default function LeavesPage() {
 
                 setUserName(profile?.full_name ?? null)
 
+                const currentYear = new Date().getFullYear()
+
+                const { data: types } = await supabase
+                    .from('leave_types')
+                    .select('id, name, default_balance')
+                    .order('name', { ascending: true })
+
+                setLeaveTypes(types || [])
+                if (types && types.length > 0) {
+                    setFormData(prev => ({ ...prev, leave_type_id: prev.leave_type_id || types[0].id }))
+                }
+
                 // Load leave requests
                 const { data: requests } = await supabase
                     .from('leave_requests')
-                    .select('*')
+                    .select('id, user_id, leave_type_id, reason, start_date, end_date, comment, status, created_at, leave_type:leave_types(name)')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
 
                 if (requests) {
-                    setLeaveRequests(requests)
-
-                    // Calculate used leaves
-                    const approved = requests.filter(r => r.status === 'approved')
-                    const balance = {
-                        half_day_total: 24,
-                        half_day_used: approved.filter(r => r.leave_type === 'half_day').length,
-                        medical_total: 5,
-                        medical_used: approved.filter(r => r.leave_type === 'medical').length,
-                        casual_total: 11,
-                        casual_used: approved.filter(r => r.leave_type === 'casual').length
-                    }
-                    setLeaveBalance(balance)
+                    const normalized = requests.map(r => ({
+                        ...r,
+                        leave_type: Array.isArray(r.leave_type) ? r.leave_type[0] ?? null : r.leave_type
+                    }))
+                    setLeaveRequests(normalized as LeaveRequest[])
                 }
+
+                const { data: balances } = await supabase
+                    .from('leave_balances')
+                    .select('leave_type_id, allocated, used')
+                    .eq('user_id', user.id)
+                    .eq('year', currentYear)
+
+                setLeaveBalances(balances || [])
 
                 setLoading(false)
             } catch (error) {
@@ -121,7 +127,7 @@ export default function LeavesPage() {
     const handleSubmitLeaveRequest = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!userId || !formData.leave_type || !formData.reason || !formData.start_date || !formData.end_date) {
+        if (!userId || !formData.leave_type_id || !formData.reason || !formData.start_date || !formData.end_date) {
             alert('Please fill all fields')
             return
         }
@@ -139,7 +145,7 @@ export default function LeavesPage() {
                 .insert([
                     {
                         user_id: userId,
-                        leave_type: formData.leave_type,
+                        leave_type_id: formData.leave_type_id,
                         reason: formData.reason,
                         start_date: formData.start_date,
                         end_date: formData.end_date,
@@ -151,7 +157,7 @@ export default function LeavesPage() {
             if (!error && data) {
                 setLeaveRequests([data[0], ...leaveRequests])
                 setFormData({
-                    leave_type: 'half_day',
+                    leave_type_id: leaveTypes[0]?.id || '',
                     reason: '',
                     start_date: '',
                     end_date: ''
@@ -193,6 +199,15 @@ export default function LeavesPage() {
         }
     }
 
+    const approvedCounts = leaveRequests
+        .filter(r => r.status === 'approved')
+        .reduce<Record<string, number>>((acc, r) => {
+            acc[r.leave_type_id] = (acc[r.leave_type_id] || 0) + 1
+            return acc
+        }, {})
+
+    const balanceMap = new Map(leaveBalances.map(b => [b.leave_type_id, b]))
+
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading leaves...</p></div>
 
     return (
@@ -206,79 +221,39 @@ export default function LeavesPage() {
                         <p className="text-gray-600 mt-2">Manage your leaves and leave requests</p>
                     </div>
 
-                    {/* Leave Balance Cards */}
+                                        {/* Leave Balance Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                        {/* Half Day Leaves */}
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-6">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <p className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Half Day Leaves</p>
-                                    <p className="text-xs text-blue-600 mt-1">Limited leaves</p>
+                        {leaveTypes.map(type => {
+                            const bal = balanceMap.get(type.id)
+                            const allocated = bal?.allocated ?? type.default_balance ?? 0
+                            const used = bal?.used ?? approvedCounts[type.id] ?? 0
+                            const remaining = Math.max(allocated - used, 0)
+                            const usagePct = allocated > 0 ? (used / allocated) * 100 : 0
+                            return (
+                                <div key={type.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{type.name}</p>
+                                            <p className="text-xs text-gray-500 mt-1">Yearly allocation</p>
+                                        </div>
+                                        <span className="text-2xl">#</span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <p className="text-sm text-gray-600">Used: <span className="font-bold">{used}</span></p>
+                                            <p className="text-sm text-gray-600">Allocated: <span className="font-bold">{allocated}</span></p>
+                                        </div>
+                                        <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
+                                            <div
+                                                className="bg-gray-700 h-full transition-all"
+                                                style={{ width: `${usagePct}%` }}
+                                            ></div>
+                                        </div>
+                                        <p className="text-lg font-bold text-gray-900">{remaining} Available</p>
+                                    </div>
                                 </div>
-                                <span className="text-3xl">🕐</span>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <p className="text-sm text-blue-700">Used: <span className="font-bold">{leaveBalance.half_day_used}</span></p>
-                                    <p className="text-sm text-blue-700">Total: <span className="font-bold">{leaveBalance.half_day_total}</span></p>
-                                </div>
-                                <div className="bg-blue-200 rounded-full h-2 overflow-hidden">
-                                    <div
-                                        className="bg-blue-600 h-full transition-all"
-                                        style={{ width: `${(leaveBalance.half_day_used / leaveBalance.half_day_total) * 100}%` }}
-                                    ></div>
-                                </div>
-                                <p className="text-lg font-bold text-blue-900">{leaveBalance.half_day_total - leaveBalance.half_day_used} Available</p>
-                            </div>
-                        </div>
-
-                        {/* Medical Leaves */}
-                        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-sm border border-red-200 p-6">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <p className="text-sm font-semibold text-red-700 uppercase tracking-wide">Medical Leaves</p>
-                                    <p className="text-xs text-red-600 mt-1">Critical for health</p>
-                                </div>
-                                <span className="text-3xl">🏥</span>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <p className="text-sm text-red-700">Used: <span className="font-bold">{leaveBalance.medical_used}</span></p>
-                                    <p className="text-sm text-red-700">Total: <span className="font-bold">{leaveBalance.medical_total}</span></p>
-                                </div>
-                                <div className="bg-red-200 rounded-full h-2 overflow-hidden">
-                                    <div
-                                        className="bg-red-600 h-full transition-all"
-                                        style={{ width: `${(leaveBalance.medical_used / leaveBalance.medical_total) * 100}%` }}
-                                    ></div>
-                                </div>
-                                <p className="text-lg font-bold text-red-900">{leaveBalance.medical_total - leaveBalance.medical_used} Available</p>
-                            </div>
-                        </div>
-
-                        {/* Casual Leaves */}
-                        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm border border-purple-200 p-6">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <p className="text-sm font-semibold text-purple-700 uppercase tracking-wide">Casual Leaves</p>
-                                    <p className="text-xs text-purple-600 mt-1">Personal reasons</p>
-                                </div>
-                                <span className="text-3xl">☀️</span>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <p className="text-sm text-purple-700">Used: <span className="font-bold">{leaveBalance.casual_used}</span></p>
-                                    <p className="text-sm text-purple-700">Total: <span className="font-bold">{leaveBalance.casual_total}</span></p>
-                                </div>
-                                <div className="bg-purple-200 rounded-full h-2 overflow-hidden">
-                                    <div
-                                        className="bg-purple-600 h-full transition-all"
-                                        style={{ width: `${(leaveBalance.casual_used / leaveBalance.casual_total) * 100}%` }}
-                                    ></div>
-                                </div>
-                                <p className="text-lg font-bold text-purple-900">{leaveBalance.casual_total - leaveBalance.casual_used} Available</p>
-                            </div>
-                        </div>
+                            )
+                        })}
                     </div>
 
                     {/* Request Leave Button */}
@@ -301,13 +276,13 @@ export default function LeavesPage() {
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-900 mb-2">Leave Type *</label>
                                         <select
-                                            value={formData.leave_type}
-                                            onChange={(e) => setFormData({ ...formData, leave_type: e.target.value })}
+                                            value={formData.leave_type_id}
+                                            onChange={(e) => setFormData({ ...formData, leave_type_id: e.target.value })}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                         >
-                                            <option value="half_day">Half Day Leave</option>
-                                            <option value="medical">Medical Leave</option>
-                                            <option value="casual">Casual Leave</option>
+                                            {leaveTypes.map(type => (
+                                                <option key={type.id} value={type.id}>{type.name}</option>
+                                            ))}
                                         </select>
                                     </div>
 
@@ -391,7 +366,7 @@ export default function LeavesPage() {
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <h3 className="font-semibold text-gray-900">
-                                                        {LEAVE_TYPES[request.leave_type as keyof typeof LEAVE_TYPES]?.label || request.leave_type}
+                                                        {request.leave_type?.name || 'Leave'}
                                                     </h3>
                                                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status)}`}>
                                                         {getStatusIcon(request.status)} {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
@@ -420,3 +395,6 @@ export default function LeavesPage() {
         </div>
     )
 }
+
+
+

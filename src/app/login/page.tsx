@@ -33,6 +33,20 @@ export default function LoginPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not found');
 
+      // Stamp daily login date in auth metadata (UTC)
+      const today = new Date().toISOString().slice(0, 10);
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { last_login_date: today },
+      });
+      if (updateError) {
+        setError(updateError.message || 'Failed to update login metadata');
+        setLoading(false);
+        return;
+      }
+
+      // Refresh session so the new metadata is reflected in the JWT used by middleware.
+      await supabase.auth.refreshSession();
+
       // Check user status and profile
       const { data: profile } = await supabase
         .from('profiles')

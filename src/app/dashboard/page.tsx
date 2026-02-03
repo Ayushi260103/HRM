@@ -49,8 +49,7 @@ export default function DashboardPage() {
         return
       }
       if (profile.role === 'hr') {
-        
-        router.replace('/dashboard/hr ')
+        router.replace('/dashboard/hr')
         return
       }
       if (profile.role === 'employee') {
