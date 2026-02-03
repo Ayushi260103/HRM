@@ -44,12 +44,31 @@ EXECUTE PROCEDURE notify_on_new_profile();
 
 -- 2) New leave request -> notify admin and hr
 CREATE OR REPLACE FUNCTION notify_on_new_leave_request() RETURNS TRIGGER AS $$
+DECLARE
+  leave_type_name TEXT;
+  requester_name TEXT;
+  requester_role TEXT;
 BEGIN
-  INSERT INTO notifications(role_target, source_table, source_id, message)
-  VALUES('admin', 'leave_requests', NEW.id, 'New leave request from ' || NEW.user_id::text || ' (' || NEW.leave_type || ')');
+  SELECT name INTO leave_type_name FROM leave_types WHERE id = NEW.leave_type_id;
+  SELECT full_name, role INTO requester_name, requester_role FROM profiles WHERE id = NEW.user_id;
 
   INSERT INTO notifications(role_target, source_table, source_id, message)
-  VALUES('hr', 'leave_requests', NEW.id, 'New leave request from ' || NEW.user_id::text || ' (' || NEW.leave_type || ')');
+  VALUES(
+    'admin',
+    'leave_requests',
+    NEW.id,
+    'New leave request from ' || COALESCE(requester_name, NEW.user_id::text) || ' (' || COALESCE(leave_type_name, 'leave') || ')'
+  );
+
+  IF requester_role = 'employee' THEN
+    INSERT INTO notifications(role_target, source_table, source_id, message)
+    VALUES(
+      'hr',
+      'leave_requests',
+      NEW.id,
+      'New leave request from ' || COALESCE(requester_name, NEW.user_id::text) || ' (' || COALESCE(leave_type_name, 'leave') || ')'
+    );
+  END IF;
 
   RETURN NEW;
 END;
@@ -63,10 +82,18 @@ EXECUTE PROCEDURE notify_on_new_leave_request();
 
 -- 3) Leave status change -> notify the employee (for_user)
 CREATE OR REPLACE FUNCTION notify_on_leave_status_change() RETURNS TRIGGER AS $$
+DECLARE
+  leave_type_name TEXT;
 BEGIN
   IF (TG_OP = 'UPDATE' AND NEW.status <> OLD.status) THEN
+    SELECT name INTO leave_type_name FROM leave_types WHERE id = NEW.leave_type_id;
     INSERT INTO notifications(for_user, source_table, source_id, message)
-    VALUES(NEW.user_id, 'leave_requests', NEW.id, 'Your ' || NEW.leave_type || ' leave request has been ' || NEW.status);
+    VALUES(
+      NEW.user_id,
+      'leave_requests',
+      NEW.id,
+      'Your ' || COALESCE(leave_type_name, 'leave') || ' request has been ' || NEW.status
+    );
   END IF;
   RETURN NEW;
 END;
