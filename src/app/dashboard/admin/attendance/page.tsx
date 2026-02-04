@@ -23,6 +23,8 @@ export default function AttendancePage() {
     const [loading, setLoading] = useState(true)
     const [email, setEmail] = useState<string | null>(null)
     const [userName, setUserName] = useState<string | null>(null)
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'clocked_out' | 'not_clocked_in'>('all')
     const [rangeFilter, setRangeFilter] = useState<'last_15' | 'last_30' | 'prev_month' | 'last_3_months' | 'last_6_months' | 'year'>('last_15')
 
@@ -62,7 +64,7 @@ export default function AttendancePage() {
 
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('role, status, full_name')
+                .select('role, status, full_name, avatar_url')
                 .eq('id', user.id)
                 .single()
 
@@ -77,6 +79,7 @@ export default function AttendancePage() {
             }
 
             setUserName(profile?.full_name ?? null)
+            setAvatarUrl(profile?.avatar_url ?? null)
 
             
 
@@ -210,7 +213,7 @@ export default function AttendancePage() {
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50">
-            <Sidebar userEmail={email} userName={userName} role="admin" />
+            <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
             <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
                 <div className="w-full max-w-7xl">

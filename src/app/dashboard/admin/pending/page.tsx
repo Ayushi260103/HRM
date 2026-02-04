@@ -8,6 +8,7 @@ import Sidebar from '@/components/Sidebar'
 type PendingUser = {
   id: string
   full_name: string | null
+  email_id : string
   created_at: string
 }
 
@@ -18,6 +19,7 @@ export default function PendingRequestsPage() {
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -34,7 +36,7 @@ export default function PendingRequestsPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, full_name')
+        .select('role, full_name, avatar_url')
         .eq('id', user.id)
         .single()
 
@@ -44,10 +46,11 @@ export default function PendingRequestsPage() {
       }
 
       setUserName(profile?.full_name ?? null)
+      setAvatarUrl(profile?.avatar_url ?? null)
 
       const { data: pendingUsers } = await supabase
         .from('profiles')
-        .select('id, full_name, created_at')
+        .select('id, full_name, email_id, created_at')
         .eq('status', 'pending')
         .order('created_at', { ascending: true })
 
@@ -80,7 +83,7 @@ export default function PendingRequestsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Sidebar userEmail={email} userName={userName} role="admin" />
+      <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
       <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
         <div className="w-full max-w-4xl">
@@ -106,6 +109,7 @@ export default function PendingRequestsPage() {
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                       <p className="font-semibold text-gray-900 text-lg">{user.full_name || 'No name provided'}</p>
+                      <p className="font-semibold text-gray-600 text-sm">{user.email_id || 'No email provided'}</p>
                       <p className="text-sm text-gray-500 mt-1">ID: {user.id.substring(0, 8)}...</p>
                       <p className="text-xs text-gray-400 mt-1">
                         Applied: {new Date(user.created_at).toLocaleDateString()}

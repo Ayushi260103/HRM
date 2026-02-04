@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Sidebar from '@/components/Sidebar'
 import Notifications from '@/components/Notifications'
+import { profile } from 'console'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -12,6 +13,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [clockInTime, setClockInTime] = useState<string | null>(null)
   const [clockOutTime, setClockOutTime] = useState<string | null>(null)
@@ -34,7 +36,7 @@ export default function AdminDashboard() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, full_name')
+        .select('role, full_name, avatar_url')
         .eq('id', user.id)
         .single()
 
@@ -44,6 +46,7 @@ export default function AdminDashboard() {
       }
 
       setUserName(profile?.full_name ?? null)
+      setAvatarUrl(profile?.avatar_url ?? null)
       setLoading(false)
     }
 
@@ -145,7 +148,7 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Sidebar userEmail={email} userName={userName} role="admin" />
+      <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
       {/* Notification Bell */}
       <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-8">

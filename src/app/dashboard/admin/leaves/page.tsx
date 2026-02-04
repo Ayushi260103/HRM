@@ -10,6 +10,7 @@ export default function AdminLeavesHomePage() {
   const router = useRouter()
   const [email, setEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function AdminLeavesHomePage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, status, full_name')
+        .select('role, status, full_name, avatar_url')
         .eq('id', user.id)
         .single()
 
@@ -41,6 +42,7 @@ export default function AdminLeavesHomePage() {
       }
 
       setUserName(profile?.full_name ?? null)
+      setAvatarUrl(profile?.avatar_url ?? null)
       setLoading(false)
     }
 
@@ -57,7 +59,7 @@ export default function AdminLeavesHomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Sidebar userEmail={email} userName={userName} role="admin" />
+      <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
       <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
         <div className="w-full max-w-4xl">

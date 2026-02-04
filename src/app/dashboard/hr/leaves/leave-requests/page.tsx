@@ -32,6 +32,7 @@ export default function HRLeavesPage() {
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([])
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
@@ -53,7 +54,7 @@ export default function HRLeavesPage() {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role, full_name')
+          .select('role, full_name, avatar_url')
           .eq('id', user.id)
           .single()
 
@@ -63,6 +64,7 @@ export default function HRLeavesPage() {
         }
 
         setUserName(profile?.full_name ?? null)
+        setAvatarUrl(profile?.avatar_url ?? null)
 
         // Load all leave requests
         const { data: requests } = await supabase
@@ -241,7 +243,7 @@ export default function HRLeavesPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Sidebar userEmail={email} userName={userName} role="hr" />
+      <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
 
       <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
         <div className="w-full max-w-6xl">

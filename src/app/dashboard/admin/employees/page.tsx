@@ -27,6 +27,7 @@ export default function EmployeesPage() {
   const [filterDept, setFilterDept] = useState<string>('');
   const [email, setEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function EmployeesPage() {
         // Check if user is HR or Admin
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role, status, full_name')
+          .select('role, status, full_name, avatar_url')
           .eq('id', user.id)
           .single();
 
@@ -54,6 +55,7 @@ export default function EmployeesPage() {
         }
 
         setUserName(profile?.full_name ?? null);
+        setAvatarUrl(profile?.avatar_url ?? null)
         setUserRole(profile?.role ?? null);
 
         // Fetch all active employees
@@ -88,7 +90,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Sidebar userEmail={email} userName={userName} role={userRole} />
+      <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role={userRole} />
 
       <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
         <div className="w-full max-w-7xl">

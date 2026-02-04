@@ -10,6 +10,7 @@ export default function HRDashboardPage() {
   const router = useRouter()
   const [email, setEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [clockInTime, setClockInTime] = useState<string | null>(null)
@@ -33,7 +34,7 @@ export default function HRDashboardPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, status, full_name')
+        .select('role, status, full_name, avatar_url')
         .eq('id', user.id)
         .single()
 
@@ -50,6 +51,7 @@ export default function HRDashboardPage() {
       }
 
       setUserName(profile?.full_name)
+      setAvatarUrl(profile?.avatar_url ?? null)
       setLoading(false)
     }
 
@@ -136,7 +138,7 @@ export default function HRDashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Sidebar userEmail={email} userName={userName} role="hr" />
+      <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
 
       {/* Notification Bell */}
       <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-8">
