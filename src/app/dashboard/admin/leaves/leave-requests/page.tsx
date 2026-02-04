@@ -15,6 +15,7 @@ type LeaveRequest = {
   status: 'pending' | 'approved' | 'rejected'
   created_at: string
   comment?: string
+  half_day_part?: 'first' | 'second' | null
   leave_type?: {
     name: string
   } | null
@@ -67,7 +68,7 @@ export default function AdminLeavesPage() {
         // Load all leave requests
         const { data: requests } = await supabase
           .from('leave_requests')
-          .select('id, user_id, leave_type_id, reason, start_date, end_date, status, created_at, comment, leave_type:leave_types(name)')
+          .select('id, user_id, leave_type_id, reason, start_date, end_date, status, created_at, comment, half_day_part, leave_type:leave_types(name)')
           .order('created_at', { ascending: false })
 
         if (requests && requests.length > 0) {
@@ -332,6 +333,12 @@ export default function AdminLeavesPage() {
                             <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Date Range</p>
                             <p className="text-sm text-gray-900">{new Date(request.start_date).toLocaleDateString()} - {new Date(request.end_date).toLocaleDateString()}</p>
                           </div>
+                          {request.half_day_part && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Half Day</p>
+                              <p className="text-sm text-gray-900">{request.half_day_part === 'first' ? 'First Half' : 'Second Half'}</p>
+                            </div>
+                          )}
                           <div>
                             <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Requested On</p>
                             <p className="text-sm text-gray-900">{new Date(request.created_at).toLocaleDateString()}</p>

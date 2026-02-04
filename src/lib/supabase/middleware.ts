@@ -58,20 +58,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Force re-login once per day (UTC) based on JWT issued-at (iat).
-  if (user && !publicPaths.some((p) => pathname.startsWith(p))) {
-    const today = new Date().toISOString().slice(0, 10)
-    const issuedAt = (user as { iat?: number })?.iat
-    const issuedDate = issuedAt ? new Date(issuedAt * 1000).toISOString().slice(0, 10) : null
-
-    if (!issuedDate || issuedDate !== today) {
-      await supabase.auth.signOut()
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      return NextResponse.redirect(url)
-    }
-  }
-
   // If a user IS logged in and tries to access the login or signup page, redirect them to the dashboard instead.
   if (user && (pathname === '/login' || pathname === '/signup')) {
     const url = request.nextUrl.clone()

@@ -15,6 +15,7 @@ type LeaveRequest = {
     comment: string | null
     status: 'pending' | 'approved' | 'rejected'
     created_at: string
+    half_day_part?: 'first' | 'second' | null
     leave_type?: {
         name: string
     } | null
@@ -50,7 +51,8 @@ export default function LeavesPage() {
         leave_type_id: '',
         reason: '',
         start_date: '',
-        end_date: ''
+        end_date: '',
+        half_day_part: '' as '' | 'first' | 'second'
     })
     const [submitting, setSubmitting] = useState(false)
 
@@ -96,7 +98,7 @@ export default function LeavesPage() {
                 // Load leave requests
                 const { data: requests } = await supabase
                     .from('leave_requests')
-                    .select('id, user_id, leave_type_id, reason, start_date, end_date, comment, status, created_at, leave_type:leave_types(name)')
+                    .select('id, user_id, leave_type_id, reason, start_date, end_date, comment, status, created_at, half_day_part, leave_type:leave_types(name)')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
 
@@ -139,6 +141,12 @@ export default function LeavesPage() {
             return
         }
 
+        const isHalfDay = (selectedType?.name || '').toLowerCase().includes('half')
+        if (isHalfDay && !formData.half_day_part) {
+            alert('Please select first half or second half')
+            return
+        }
+
         if (selectedRemaining <= 0) {
             const leaveName = selectedType?.name || 'This'
             alert(`${leaveName} leave is exhausted, talk to HR`)
@@ -157,6 +165,7 @@ export default function LeavesPage() {
                         reason: formData.reason,
                         start_date: formData.start_date,
                         end_date: formData.end_date,
+                        half_day_part: isHalfDay ? formData.half_day_part : null,
                         status: 'pending'
                     }
                 ])
@@ -168,7 +177,8 @@ export default function LeavesPage() {
                     leave_type_id: leaveTypes[0]?.id || '',
                     reason: '',
                     start_date: '',
-                    end_date: ''
+                    end_date: '',
+                    half_day_part: ''
                 })
                 setShowForm(false)
                 alert('Leave request submitted successfully!')
@@ -303,6 +313,20 @@ export default function LeavesPage() {
                                             ))}
                                         </select>
                                     </div>
+                                    {(selectedType?.name || '').toLowerCase().includes('half') && (
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-900 mb-2">Half Day *</label>
+                                            <select
+                                                value={formData.half_day_part}
+                                                onChange={(e) => setFormData({ ...formData, half_day_part: e.target.value as 'first' | 'second' })}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            >
+                                                <option value="">Select half</option>
+                                                <option value="first">First Half</option>
+                                                <option value="second">Second Half</option>
+                                            </select>
+                                        </div>
+                                    )}
 
                                     {/* Start Date */}
                                     <div>
@@ -393,6 +417,9 @@ export default function LeavesPage() {
                                                 <p className="text-gray-700 text-sm mb-3">{request.reason}</p>
                                                 <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
                                                     <span>📅 <span className="font-medium">{new Date(request.start_date).toLocaleDateString()}</span> to <span className="font-medium">{new Date(request.end_date).toLocaleDateString()}</span></span>
+                                                    {request.half_day_part && (
+                                                        <span>⏰ <span className="font-medium">{request.half_day_part === 'first' ? 'First Half' : 'Second Half'}</span></span>
+                                                    )}
                                                     <span>🕐 <span className="font-medium">{new Date(request.created_at).toLocaleDateString()}</span></span>
                                                 </div>
                                                 {request.comment && (

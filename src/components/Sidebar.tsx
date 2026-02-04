@@ -34,6 +34,7 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
       { label: 'All Employees', href: '/dashboard/admin/employees', icon: '👥' },
       { label: 'Attendance', href: '/dashboard/admin/attendance', icon: '📅' },
       { label: 'Leave Management', href: '/dashboard/admin/leaves', icon: '🏖️' },
+      { label: 'Announcements', href: '/dashboard/admin/announcements', icon: 'A' },
       { label: 'Profile', href: '/dashboard/admin/profile', icon: '👤' },
     ],
     hr: [
@@ -41,10 +42,12 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
       { label: 'All Employees', href: '/dashboard/hr/employees', icon: '👥' },
       { label: 'Attendance', href: '/dashboard/hr/attendance', icon: '📅' },
       { label: 'Leave Management', href: '/dashboard/hr/leaves', icon: '🏖️' },
+      { label: 'Announcements', href: '/dashboard/hr/announcements', icon: 'A' },
       { label: 'Profile', href: '/dashboard/hr/profile', icon: '👤' },
     ],
     employee: [
       { label: 'Dashboard', href: '/dashboard/employee', icon: '📊' },
+      { label: 'Announcements', href: '/dashboard/employee/announcements', icon: 'A' },
       { label: 'Profile', href: '/dashboard/employee/profile', icon: '👤' },
       { label: 'Leaves', href: '/dashboard/employee/leaves', icon: '🏖️' },
     ],
@@ -144,3 +147,5 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
     </>
   );
 }
+
+
