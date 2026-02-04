@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
+import { useSupabase } from '@/hooks/useSupabase';
 
 interface SidebarProps {
   userEmail?: string | null;
@@ -17,15 +17,15 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = createClient();
+  const supabase = useSupabase();
 
-  const isActive = (path: string) => pathname.startsWith(path);
+  const isActive = useCallback((path: string) => pathname.startsWith(path), [pathname]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
     router.push('/login');
     router.refresh();
-  };
+  }, [supabase, router]);
 
   const navigationItems = {
     admin: [

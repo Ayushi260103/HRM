@@ -1,161 +1,99 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
-import Notifications from '@/components/Notifications';
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Sidebar from '@/components/Sidebar'
+import Notifications from '@/components/Notifications'
+import { useSupabase } from '@/hooks/useSupabase'
+import { useAttendance } from '@/hooks/useAttendance'
 
 interface EmployeeProfile {
-  id: string;
-  full_name: string;
-  department: string;
-  position: string;
-  phone: string;
-  hire_date: string;
-  dob: string;
-  avatar_url?: string;
-  email_id?: string;
+  id: string
+  full_name: string
+  department: string
+  position: string
+  phone: string
+  hire_date: string
+  dob: string
+  avatar_url?: string
+  email_id?: string
 }
 
 export default function EmployeeDashboard() {
-  const [profile, setProfile] = useState<EmployeeProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [loadingAttendance, setLoadingAttendance] = useState(true);
-  const [logId, setLogId] = useState<string | null>(null);
-  const [clockInTime, setClockInTime] = useState<string | null>(null);
-  const [clockOutTime, setClockOutTime] = useState<string | null>(null);
-  const router = useRouter();
-  const supabase = createClient();
+  const router = useRouter()
+  const supabase = useSupabase()
+  const [profile, setProfile] = useState<EmployeeProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [email, setEmail] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
-  // Check profile and get user info
+  const { clockInTime, clockOutTime, loading: loadingAttendance, formatTime, handleClockIn, handleClockOut } = useAttendance(userId)
+
   useEffect(() => {
+    let cancelled = false
+
     const checkProfile = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          router.push('/login');
-          return;
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+
+        if (cancelled) return
+        if (!authUser) {
+          router.push('/login')
+          return
         }
 
-        setEmail(user.email ?? null);
-        setUserId(user.id);
+        setEmail(authUser.email ?? null)
+        setUserId(authUser.id)
 
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
-          .single();
+          .eq('id', authUser.id)
+          .single()
 
+        if (cancelled) return
         if (error) {
-          router.push('/profile-completion');
-          return;
+          router.push('/profile-completion')
+          return
         }
 
-        // Check if any required field is incomplete
-        const requiredFields = ['full_name', 'department', 'position', 'phone', 'hire_date', 'dob'];
-        const isProfileIncomplete = requiredFields.some(field => !data[field]);
+        const requiredFields = ['full_name', 'department', 'position', 'phone', 'hire_date', 'dob']
+        const isProfileIncomplete = requiredFields.some(field => !data[field])
 
         if (isProfileIncomplete || !data.avatar_url) {
-          router.push('/profile-completion');
-          return;
+          router.push('/profile-completion')
+          return
         }
 
-        setProfile(data);
-      } catch (error) {
-        console.error('Profile check failed:', error);
-        router.push('/profile-completion');
+        setProfile(data)
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Profile check failed:', err)
+          router.push('/profile-completion')
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false)
       }
-    };
-
-    checkProfile();
-  }, [router, supabase]);
-
-  // Load today's attendance
-  useEffect(() => {
-    if (!userId) return;
-
-    const loadAttendance = async () => {
-      const getLocalDayRange = () => {
-        const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        return { startISO: start.toISOString(), endISO: end.toISOString() };
-      };
-
-      const { startISO, endISO } = getLocalDayRange();
-      const { data } = await supabase
-        .from('attendance_logs')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('clock_in', startISO)
-        .lt('clock_in', endISO)
-        .order('clock_in', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (data) {
-        setLogId(data.id);
-        setClockInTime(data.clock_in);
-        setClockOutTime(data.clock_out);
-      } else {
-        setLogId(null);
-        setClockInTime(null);
-        setClockOutTime(null);
-      }
-      setLoadingAttendance(false);
-    };
-
-    loadAttendance();
-  }, [userId, supabase]);
-
-  // 🟢 Clock In
-  const handleClockIn = async () => {
-    if (!userId) return;
-
-    const { data, error } = await supabase
-      .from('attendance_logs')
-      .insert([{ user_id: userId }])
-      .select()
-      .single();
-
-    if (!error && data) {
-      setLogId(data.id);
-      setClockInTime(data.clock_in);
     }
-  };
 
-  // 🔴 Clock Out
-  const handleClockOut = async () => {
-    if (!logId) return;
+    checkProfile()
+    return () => { cancelled = true }
+  }, [router, supabase])
 
-    const { data, error } = await supabase
-      .from('attendance_logs')
-      .update({ clock_out: new Date().toISOString() })
-      .eq('id', logId)
-      .select()
-      .single();
-
-    if (!error && data) {
-      setClockOutTime(data.clock_out);
-    }
-  };
-
-  const parseSupabaseTime = (time: string) => {
-    const hasTz = /[zZ]|[+-]\d{2}:\d{2}$/.test(time);
-    return new Date(hasTz ? time : `${time}Z`);
-  };
-
-  const formatTime = (time: string | null) =>
-    time ? parseSupabaseTime(time).toLocaleTimeString() : '--';
-
-  if (loading) return <div className="p-8">Loading dashboard...</div>;
-  if (!profile) return <div className="p-8">Redirecting...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50" role="status" aria-label="Loading dashboard">
+        <p className="text-gray-600 text-sm sm:text-base">Loading dashboard...</p>
+      </div>
+    )
+  }
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50" role="status" aria-label="Redirecting">
+        <p className="text-gray-600 text-sm sm:text-base">Redirecting...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -166,11 +104,11 @@ export default function EmployeeDashboard() {
         {userId && <Notifications role="employee" userId={userId} />}
       </div>
 
-      <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
-        <div className="w-full max-w-4xl">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Employee Dashboard</h1>
-            <p className="text-gray-600 mt-2">Manage your profile and track attendance</p>
+      <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64 min-w-0">
+        <div className="w-full max-w-4xl mx-auto">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">Employee Dashboard</h1>
+            <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Manage your profile and track attendance</p>
           </div>
 
           {/* Clock In / Out Section */}
@@ -181,18 +119,18 @@ export default function EmployeeDashboard() {
                 <p className="text-gray-500 text-center py-8">Loading attendance records...</p>
               ) : (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600 mb-2">Clock In Time</p>
+                      <p className="text-xs sm:text-sm text-gray-600 mb-2">Clock In Time</p>
                       <p className="text-2xl font-bold text-gray-900">{formatTime(clockInTime)}</p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600 mb-2">Clock Out Time</p>
+                      <p className="text-xs sm:text-sm text-gray-600 mb-2">Clock Out Time</p>
                       <p className="text-2xl font-bold text-gray-900">{formatTime(clockOutTime)}</p>
                     </div>
                   </div>
 
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
                     {!clockInTime && (
                       <button
                         onClick={handleClockIn}
@@ -220,7 +158,7 @@ export default function EmployeeDashboard() {
                 </div>
               )}
             </div>
-          </div>
+        </div>
       </main>
     </div>
   );

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, useCallback } from 'react'
+import { useSupabase } from '@/hooks/useSupabase'
 
 interface NotificationsProps {
   role: 'admin' | 'hr' | 'employee'
@@ -26,19 +26,18 @@ interface NotificationRead {
 }
 
 export default function Notifications({ role, userId }: NotificationsProps) {
-  const supabase = createClient()
+  const supabase = useSupabase()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
 
-  useEffect(() => {
+  const loadUnreadNotifications = useCallback(async () => {
     if (!userId) return
-    const loadUnreadNotifications = async () => {
-      try {
-        const roleFilter = role ? `role_target.eq.${role}` : ''
-        const userFilter = `for_user.eq.${userId}`
+    try {
+      const roleFilter = role ? `role_target.eq.${role}` : ''
+      const userFilter = `for_user.eq.${userId}`
 
-        const { data: notificationsData } = await supabase
+      const { data: notificationsData } = await supabase
           .from('notifications')
           .select('*')
           .or(`${roleFilter},${userFilter}`)
@@ -57,17 +56,18 @@ export default function Notifications({ role, userId }: NotificationsProps) {
           .filter(n => !readIds.has(n.id))
           .map(n => ({ id: n.id, message: n.message }))
 
-        setNotifications(unread)
-        setUnreadCount(unread.length)
-      } catch (error) {
-        console.error('Error loading notifications:', error)
-      }
+      setNotifications(unread)
+      setUnreadCount(unread.length)
+    } catch (error) {
+      console.error('Error loading notifications:', error)
     }
+  }, [role, userId, supabase])
 
+  useEffect(() => {
     loadUnreadNotifications()
     const interval = setInterval(loadUnreadNotifications, 30000)
     return () => clearInterval(interval)
-  }, [role, userId, supabase])
+  }, [loadUnreadNotifications])
 
   return (
     <div className="relative">

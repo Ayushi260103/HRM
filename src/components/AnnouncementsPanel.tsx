@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, useCallback } from 'react'
+import { useSupabase } from '@/hooks/useSupabase'
 
 type Announcement = {
   id: string
@@ -19,7 +19,7 @@ interface AnnouncementsPanelProps {
 }
 
 export default function AnnouncementsPanel({ userId, userName, userRole }: AnnouncementsPanelProps) {
-  const supabase = createClient()
+  const supabase = useSupabase()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
   const [title, setTitle] = useState('')
@@ -27,25 +27,25 @@ export default function AnnouncementsPanel({ userId, userName, userRole }: Annou
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const loadAnnouncements = async () => {
-      try {
-        const { data, error: loadError } = await supabase
-          .from('announcements')
-          .select('id, title, body, author_name, author_role, created_at')
-          .order('created_at', { ascending: false })
+  const loadAnnouncements = useCallback(async () => {
+    try {
+      const { data, error: loadError } = await supabase
+        .from('announcements')
+        .select('id, title, body, author_name, author_role, created_at')
+        .order('created_at', { ascending: false })
 
-        if (loadError) throw loadError
-        setAnnouncements(data || [])
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load announcements')
-      } finally {
-        setLoading(false)
-      }
+      if (loadError) throw loadError
+      setAnnouncements(data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load announcements')
+    } finally {
+      setLoading(false)
     }
-
-    loadAnnouncements()
   }, [supabase])
+
+  useEffect(() => {
+    loadAnnouncements()
+  }, [loadAnnouncements])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

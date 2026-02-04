@@ -2,20 +2,19 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
+import { useSupabase } from '@/hooks/useSupabase'
 
 export default function DashboardPage() {
   const router = useRouter()
-
+  const supabase = useSupabase()
   const [email, setEmail] = useState<string | null>(null)
   const [role, setRole] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState<string | null>(null)
 
   useEffect(() => {
-    const supabase = createClient()
     const checkAccess = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -64,7 +63,7 @@ export default function DashboardPage() {
     }
 
     checkAccess()
-  }, [router])
+  }, [router, supabase])
 
   if (loading) {
     return (

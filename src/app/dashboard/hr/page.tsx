@@ -1,155 +1,85 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
 import Notifications from '@/components/Notifications'
+import { useSupabase } from '@/hooks/useSupabase'
+import { useAttendance } from '@/hooks/useAttendance'
+
+type UserState = { email: string | null; userName: string | null; avatarUrl: string | null; userId: string | null }
 
 export default function HRDashboardPage() {
   const router = useRouter()
-  const [email, setEmail] = useState<string | null>(null)
-  const [userName, setUserName] = useState<string | null>(null)
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const supabase = useSupabase()
   const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [clockInTime, setClockInTime] = useState<string | null>(null)
-  const [clockOutTime, setClockOutTime] = useState<string | null>(null)
-  const [logId, setLogId] = useState<string | null>(null)
-  const [loadingAttendance, setLoadingAttendance] = useState(true)
+  const [user, setUser] = useState<UserState>({ email: null, userName: null, avatarUrl: null, userId: null })
 
-  const supabase = createClient()
+  const { clockInTime, clockOutTime, loading: loadingAttendance, formatTime, handleClockIn, handleClockOut } = useAttendance(user.userId)
 
   useEffect(() => {
-    const checkAccess = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+    let cancelled = false
 
-      if (!user) {
+    const checkAccess = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+
+      if (cancelled) return
+      if (!authUser) {
         router.replace('/login')
         return
       }
 
-      setEmail(user.email ?? null)
-      setUserId(user.id)
-
       const { data: profile } = await supabase
         .from('profiles')
         .select('role, status, full_name, avatar_url')
-        .eq('id', user.id)
+        .eq('id', authUser.id)
         .single()
 
-      // Must be approved first
+      if (cancelled) return
       if (profile?.status !== 'active') {
         router.replace('/pending-approval')
         return
       }
-
-      // Only HR or Admin allowed
       if (profile?.role !== 'hr' && profile?.role !== 'admin') {
         router.replace('/dashboard/employee')
         return
       }
 
-      setUserName(profile?.full_name)
-      setAvatarUrl(profile?.avatar_url ?? null)
+      setUser({
+        email: authUser.email ?? null,
+        userId: authUser.id,
+        userName: profile?.full_name ?? null,
+        avatarUrl: profile?.avatar_url ?? null,
+      })
       setLoading(false)
     }
 
     checkAccess()
+    return () => { cancelled = true }
   }, [router, supabase])
 
-  // Load today's attendance
-  useEffect(() => {
-    const loadAttendance = async () => {
-      if (!userId) return
-
-      const getLocalDayRange = () => {
-        const now = new Date()
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-        return { startISO: start.toISOString(), endISO: end.toISOString() }
-      }
-
-      const { startISO, endISO } = getLocalDayRange()
-      const { data } = await supabase
-        .from('attendance_logs')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('clock_in', startISO)
-        .lt('clock_in', endISO)
-        .order('clock_in', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      if (data) {
-        setLogId(data.id)
-        setClockInTime(data.clock_in)
-        setClockOutTime(data.clock_out)
-      } else {
-        setLogId(null)
-        setClockInTime(null)
-        setClockOutTime(null)
-      }
-      setLoadingAttendance(false)
-    }
-
-    loadAttendance()
-  }, [userId, supabase])
-
-  const handleClockIn = async () => {
-    if (!userId) return
-
-    const { data, error } = await supabase
-      .from('attendance_logs')
-      .insert([{ user_id: userId }])
-      .select()
-      .single()
-
-    if (!error && data) {
-      setLogId(data.id)
-      setClockInTime(data.clock_in)
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50" role="status" aria-label="Checking access">
+        <p className="text-gray-600 text-sm sm:text-base">Checking access...</p>
+      </div>
+    )
   }
-
-  const handleClockOut = async () => {
-    if (!logId) return
-
-    const { data, error } = await supabase
-      .from('attendance_logs')
-      .update({ clock_out: new Date().toISOString() })
-      .eq('id', logId)
-      .select()
-      .single()
-
-    if (!error && data) {
-      setClockOutTime(data.clock_out)
-    }
-  }
-
-  const parseSupabaseTime = (time: string) => {
-    const hasTz = /[zZ]|[+-]\d{2}:\d{2}$/.test(time)
-    return new Date(hasTz ? time : `${time}Z`)
-  }
-
-  const formatTime = (time: string | null) =>
-    time ? parseSupabaseTime(time).toLocaleTimeString() : '--'
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Checking access...</p></div>
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
+      <Sidebar userEmail={user.email} userName={user.userName} avatarUrl={user.avatarUrl} role="hr" />
 
-      {/* Notification Bell */}
       <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-8">
-        {userId && <Notifications role="hr" userId={userId} />}
+        {user.userId && <Notifications role="hr" userId={user.userId} />}
       </div>
 
-      <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
-        <div className="w-full max-w-4xl">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">HR Dashboard</h1>
-            <p className="text-gray-600 mt-2">Manage people, attendance, and policies</p>
+      <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64 min-w-0">
+        <div className="w-full max-w-4xl mx-auto">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">HR Dashboard</h1>
+            <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Manage people, attendance, and policies</p>
           </div>
 
           {/* Clock In/Out Section */}
@@ -159,7 +89,7 @@ export default function HRDashboardPage() {
               <p className="text-gray-500 text-sm">Loading...</p>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-gray-50 rounded-lg p-4">
                     <p className="text-xs font-semibold text-gray-600 mb-1">Clock In</p>
                     <p className="text-lg font-bold text-gray-900">{formatTime(clockInTime)}</p>
@@ -169,7 +99,7 @@ export default function HRDashboardPage() {
                     <p className="text-lg font-bold text-gray-900">{formatTime(clockOutTime)}</p>
                   </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   {!clockInTime && (
                     <button
                       onClick={handleClockIn}
@@ -196,18 +126,23 @@ export default function HRDashboardPage() {
             )}
           </div>
 
-          {/* Quick Links */}
-          <div className="grid grid-cols-2 gap-4">
-            <a href="/dashboard/hr/employees" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
-              <div className="text-2xl mb-2">👥</div>
-              <h3 className="font-semibold text-gray-900">All Employees</h3>
+          <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <Link
+              href="/dashboard/hr/employees"
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md hover:border-blue-300 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[88px] flex flex-col justify-center"
+            >
+              <span className="text-2xl mb-2 block" aria-hidden>👥</span>
+              <h3 className="font-semibold text-gray-900 text-sm">All Employees</h3>
               <p className="text-xs text-gray-600 mt-1">View and manage profiles</p>
-            </a>
-            <a href="/dashboard/hr/attendance" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
-              <div className="text-2xl mb-2">📅</div>
-              <h3 className="font-semibold text-gray-900">Attendance</h3>
+            </Link>
+            <Link
+              href="/dashboard/hr/attendance"
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md hover:border-blue-300 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[88px] flex flex-col justify-center"
+            >
+              <span className="text-2xl mb-2 block" aria-hidden>📅</span>
+              <h3 className="font-semibold text-gray-900 text-sm">Attendance</h3>
               <p className="text-xs text-gray-600 mt-1">Clock in/out records</p>
-            </a>
+            </Link>
           </div>
         </div>
       </main>
