@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Sidebar from '@/components/Sidebar'
 import Notifications from '@/components/Notifications'
-import { profile } from 'console'
+
 
 export default function AdminDashboard() {
   const router = useRouter()
