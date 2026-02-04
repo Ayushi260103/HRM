@@ -25,7 +25,9 @@ export default function AttendancePage() {
     const [userName, setUserName] = useState<string | null>(null)
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'clocked_out' | 'not_clocked_in'>('all')
-    const [rangeFilter, setRangeFilter] = useState<'last_15' | 'last_30' | 'prev_month' | 'last_3_months' | 'last_6_months' | 'year'>('last_15')
+    const [rangeFilter, setRangeFilter] = useState<'last_15' | 'last_30' | 'prev_month' | 'last_3_months' | 'last_6_months' | 'year' | 'custom'>('last_15')
+    const [customStart, setCustomStart] = useState('')
+    const [customEnd, setCustomEnd] = useState('')
 
     const getRange = () => {
         const now = new Date()
@@ -43,6 +45,12 @@ export default function AttendancePage() {
             const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
             const firstOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
             return { startISO: firstOfPrevMonth.toISOString(), endISO: firstOfThisMonth.toISOString() }
+        }
+        if (rangeFilter === 'custom' && customStart && customEnd) {
+            const startCustom = new Date(customStart)
+            const endCustom = new Date(customEnd)
+            endCustom.setDate(endCustom.getDate() + 1)
+            return { startISO: startCustom.toISOString(), endISO: endCustom.toISOString() }
         }
 
         return { startISO: start.toISOString(), endISO: end.toISOString() }
@@ -233,10 +241,28 @@ export default function AttendancePage() {
                                 <option value="last_3_months">Last 3 months</option>
                                 <option value="last_6_months">Last 6 months</option>
                                 <option value="year">Complete year</option>
+                                <option value="custom">Custom range</option>
                             </select>
+                            {rangeFilter === 'custom' && (
+                                <>
+                                    <input
+                                        type="date"
+                                        value={customStart}
+                                        onChange={e => setCustomStart(e.target.value)}
+                                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                                    />
+                                    <input
+                                        type="date"
+                                        value={customEnd}
+                                        onChange={e => setCustomEnd(e.target.value)}
+                                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                                    />
+                                </>
+                            )}
                             <button
                                 onClick={downloadReport}
-                                className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800"
+                                disabled={rangeFilter === 'custom' && (!customStart || !customEnd || customStart > customEnd)}
+                                className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50"
                             >
                                 Download Report
                             </button>
@@ -340,4 +366,3 @@ export default function AttendancePage() {
         </div>
     )
 }
-

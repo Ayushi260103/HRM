@@ -22,6 +22,9 @@ export default function EmployeeProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editData, setEditData] = useState<EmployeeProfile | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const supabase = createClient();
 
@@ -45,6 +48,7 @@ export default function EmployeeProfilePage() {
 
         if (fetchError) throw fetchError;
         setProfile(data);
+        setEditData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile');
       } finally {
@@ -54,6 +58,43 @@ export default function EmployeeProfilePage() {
 
     fetchProfile();
   }, [supabase]);
+
+  const toDateInput = (value?: string) => (value ? value.slice(0, 10) : '');
+
+  const handleSave = async () => {
+    if (!editData) return;
+    try {
+      setSaving(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editData.full_name,
+          department: editData.department,
+          position: editData.position,
+          phone: editData.phone,
+          hire_date: editData.hire_date,
+          dob: editData.dob,
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setProfile(prev => prev ? { ...prev, ...editData } : editData);
+      setIsEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditData(profile);
+    setIsEditing(false);
+  };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -146,7 +187,16 @@ export default function EmployeeProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Full Name</label>
-                  <p className="text-lg font-semibold text-gray-900">{profile.full_name}</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editData?.full_name || ''}
+                      onChange={(e) => setEditData(prev => prev ? { ...prev, full_name: e.target.value } : prev)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{profile.full_name}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Email</label>
@@ -154,24 +204,97 @@ export default function EmployeeProfilePage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Date of Birth</label>
-                  <p className="text-lg font-semibold text-gray-900">{new Date(profile.dob).toLocaleDateString()}</p>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={toDateInput(editData?.dob)}
+                      onChange={(e) => setEditData(prev => prev ? { ...prev, dob: e.target.value } : prev)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{new Date(profile.dob).toLocaleDateString()}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Position</label>
-                  <p className="text-lg font-semibold text-gray-900">{profile.position}</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editData?.position || ''}
+                      onChange={(e) => setEditData(prev => prev ? { ...prev, position: e.target.value } : prev)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{profile.position}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Department</label>
-                  <p className="text-lg font-semibold text-gray-900">{profile.department}</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editData?.department || ''}
+                      onChange={(e) => setEditData(prev => prev ? { ...prev, department: e.target.value } : prev)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{profile.department}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Phone</label>
-                  <p className="text-lg font-semibold text-gray-900">{profile.phone}</p>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      value={editData?.phone || ''}
+                      onChange={(e) => setEditData(prev => prev ? { ...prev, phone: e.target.value } : prev)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{profile.phone}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Hire Date</label>
-                  <p className="text-lg font-semibold text-gray-900">{new Date(profile.hire_date).toLocaleDateString()}</p>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={toDateInput(editData?.hire_date)}
+                      onChange={(e) => setEditData(prev => prev ? { ...prev, hire_date: e.target.value } : prev)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{new Date(profile.hire_date).toLocaleDateString()}</p>
+                  )}
                 </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      disabled={saving}
+                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  >
+                    Edit Profile
+                  </button>
+                )}
               </div>
             </div>
           </div>

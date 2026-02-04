@@ -49,7 +49,7 @@ export default function EmployeesPage() {
           .eq('id', user.id)
           .single();
 
-        if (!profile || (profile.role !== 'hr' && profile.role !== 'admin')) {
+        if (!profile || (profile.role !== 'admin')) {
           router.replace('/dashboard');
           return;
         }
@@ -63,7 +63,7 @@ export default function EmployeesPage() {
           .from('profiles')
           .select('id, full_name, email_id, department, position, phone, dob, hire_date, avatar_url')
           .eq('status', 'active')
-          .eq('role', 'employee')
+          .in('role', ['employee', 'hr'])
           .order('full_name', { ascending: true });
 
         setEmployees(allEmployees || []);
