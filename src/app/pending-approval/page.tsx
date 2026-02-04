@@ -29,7 +29,8 @@ export default function PendingApprovalPage() {
           .single();
 
         if (profile?.status === 'active') {
-          router.replace('/dashboard/employee');
+          await supabase.auth.refreshSession();
+          router.replace('/dashboard');
           return;
         }
 

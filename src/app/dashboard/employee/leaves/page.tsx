@@ -139,6 +139,12 @@ export default function LeavesPage() {
             return
         }
 
+        if (selectedRemaining <= 0) {
+            const leaveName = selectedType?.name || 'This'
+            alert(`${leaveName} leave is exhausted, talk to HR`)
+            return
+        }
+
         setSubmitting(true)
 
         try {
@@ -209,6 +215,11 @@ export default function LeavesPage() {
         }, {})
 
     const balanceMap = new Map(leaveBalances.map(b => [b.leave_type_id, b]))
+    const selectedType = leaveTypes.find(t => t.id === formData.leave_type_id) || null
+    const selectedBalance = selectedType ? balanceMap.get(selectedType.id) : null
+    const selectedAllocated = selectedType ? (selectedBalance?.allocated ?? selectedType.default_balance ?? 0) : 0
+    const selectedUsed = selectedType ? (selectedBalance?.used ?? approvedCounts[selectedType.id] ?? 0) : 0
+    const selectedRemaining = Math.max(selectedAllocated - selectedUsed, 0)
 
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading leaves...</p></div>
 
@@ -272,6 +283,11 @@ export default function LeavesPage() {
                     {showForm && (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                             <h2 className="text-xl font-bold text-gray-900 mb-6">Submit Leave Request</h2>
+                            {selectedRemaining <= 0 && (
+                                <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-800">
+                                    {selectedType?.name || 'This'} leave is exhausted, talk to HR.
+                                </div>
+                            )}
                             <form onSubmit={handleSubmitLeaveRequest} className="space-y-5">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     {/* Leave Type */}

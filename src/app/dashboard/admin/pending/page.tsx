@@ -20,6 +20,7 @@ export default function PendingRequestsPage() {
   const [email, setEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const supabase = createClient()
 
@@ -62,21 +63,50 @@ export default function PendingRequestsPage() {
   }, [router, supabase])
 
   const approveUser = async (id: string, role: string) => {
-    await supabase
-      .from('profiles')
-      .update({ status: 'active', role })
-      .eq('id', id)
+    try {
+      setActionMessage(null)
+      const res = await fetch('/api/admin/set-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: id, role }),
+      })
 
-    setUsers(users.filter(user => user.id !== id))
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.error || 'Failed to update auth role')
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: 'active', role })
+        .eq('id', id)
+
+      if (error) throw error
+
+      setUsers(users.filter(user => user.id !== id))
+      setActionMessage({ type: 'success', text: `Approved user as ${role}.` })
+    } catch (err) {
+      console.error('Approve failed:', err)
+      setActionMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to approve user' })
+    }
   }
 
   const rejectUser = async (id: string) => {
-    await supabase
-      .from('profiles')
-      .update({ status: 'rejected' })
-      .eq('id', id)
+    try {
+      setActionMessage(null)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: 'rejected' })
+        .eq('id', id)
 
-    setUsers(users.filter(user => user.id !== id))
+      if (error) throw error
+
+      setUsers(users.filter(user => user.id !== id))
+      setActionMessage({ type: 'success', text: 'User rejected.' })
+    } catch (err) {
+      console.error('Reject failed:', err)
+      setActionMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to reject user' })
+    }
   }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading requests...</p></div>
@@ -91,6 +121,18 @@ export default function PendingRequestsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Pending Requests</h1>
             <p className="text-gray-600 mt-2">Review and approve pending user registrations</p>
           </div>
+
+          {actionMessage && (
+            <div
+              className={`mb-6 rounded-lg border px-4 py-3 text-sm font-medium ${
+                actionMessage.type === 'success'
+                  ? 'bg-green-50 text-green-700 border-green-200'
+                  : 'bg-red-50 text-red-700 border-red-200'
+              }`}
+            >
+              {actionMessage.text}
+            </div>
+          )}
 
           {users.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
