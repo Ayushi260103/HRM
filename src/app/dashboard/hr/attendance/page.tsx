@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/hooks/useSupabase'
 import Sidebar from '@/components/Sidebar'
 
 type Log = {
@@ -19,6 +19,7 @@ type Log = {
 
 export default function AttendancePage() {
     const router = useRouter()
+    const supabase = useSupabase()
     const [logs, setLogs] = useState<Log[]>([])
     const [loading, setLoading] = useState(true)
     const [email, setEmail] = useState<string | null>(null)
@@ -57,8 +58,6 @@ export default function AttendancePage() {
     }
 
     useEffect(() => {
-        const supabase = createClient()
-
         const loadLogs = async () => {
             const { data: { user } } = await supabase.auth.getUser()
 
@@ -150,6 +149,7 @@ export default function AttendancePage() {
         }
 
         loadLogs()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase is stable from useSupabase
     }, [router])
 
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading attendance...</p></div>
@@ -163,7 +163,6 @@ export default function AttendancePage() {
 
     const downloadReport = () => {
         const run = async () => {
-            const supabase = createClient()
             const { startISO, endISO } = getRange()
 
             const { data: attendance, error } = await supabase

@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/hooks/useSupabase'
 import Sidebar from '@/components/Sidebar'
 
 export default function AdminLeavesHomePage() {
   const router = useRouter()
+  const supabase = useSupabase()
   const [email, setEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -15,7 +16,6 @@ export default function AdminLeavesHomePage() {
 
   useEffect(() => {
     const loadData = async () => {
-      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
@@ -47,7 +47,7 @@ export default function AdminLeavesHomePage() {
     }
 
     loadData()
-  }, [router])
+  }, [router, supabase])
 
   if (loading) {
     return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -38,7 +38,7 @@ export default function ProfileCompletionPage() {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useSupabase();
 
   useEffect(() => {
     const loadExistingProfile = async () => {

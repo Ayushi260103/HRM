@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import Image from 'next/image';
 import Sidebar from '@/components/Sidebar';
 
@@ -20,7 +20,7 @@ interface Employee {
 
 export default function EmployeesPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useSupabase();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

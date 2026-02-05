@@ -1,24 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export default function LoginPage() {
   const router = useRouter();
+  const supabase = useSupabase();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const supabase = createClient();
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -87,7 +87,7 @@ export default function LoginPage() {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setLoading(false);
     }
-  }
+  }, [supabase, router, email, password]);
 
   return (
     <div className="min-h-screen flex flex-col">

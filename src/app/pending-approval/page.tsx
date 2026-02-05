@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export default function PendingApprovalPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useSupabase();
   const [email, setEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 

@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/hooks/useSupabase'
 import Sidebar from '@/components/Sidebar'
 import AnnouncementsPanel from '@/components/AnnouncementsPanel'
 
 export default function EmployeeAnnouncementsPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useSupabase()
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)

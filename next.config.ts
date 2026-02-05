@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: true,
+  // Optimize production builds
+  poweredByHeader: false,
+  compress: true,
 };
 
 export default nextConfig;

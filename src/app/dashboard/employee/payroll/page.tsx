@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import Sidebar from '@/components/Sidebar';
 
 interface PayrollRecord {
@@ -15,7 +15,7 @@ interface PayrollRecord {
 
 export default function EmployeePayrollPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useSupabase();
   const [record, setRecord] = useState<PayrollRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);

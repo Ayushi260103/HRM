@@ -2,7 +2,7 @@
 
 // import { useState } from 'react'
 // import Link from 'next/link'
-// import { createClient } from '@/lib/supabase/client'
+// import { useSupabase } from '@/hooks/useSupabase'
 
 // export default function SignupPage() {
 //   const [email, setEmail] = useState('')
@@ -140,17 +140,17 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/hooks/useSupabase'
 
 export default function SignupPage() {
+  const router = useRouter()
+  const supabase = useSupabase()
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-
-  const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -162,7 +162,6 @@ export default function SignupPage() {
     }
 
     setLoading(true)
-    const supabase = createClient()
 
     const { error: signUpError } = await supabase.auth.signUp({
       email,

@@ -1,33 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useSupabase } from '@/hooks/useSupabase';
 
-interface SidebarProps {
-  userEmail?: string | null;
-  userName?: string | null;
-  avatarUrl?: string | null;
-  role?: string | null;
-}
-
-export default function Sidebar({ userEmail, userName, avatarUrl, role }: SidebarProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
-  const supabase = useSupabase();
-
-  const isActive = useCallback((path: string) => pathname.startsWith(path), [pathname]);
-
-  const handleLogout = useCallback(async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  }, [supabase, router]);
-
-  const navigationItems = {
+const NAV_ITEMS = {
     admin: [
       { label: 'Dashboard', href: '/dashboard/admin', icon: '📊' },
       { label: 'Pending Requests', href: '/dashboard/admin/pending', icon: '✅' },
@@ -57,9 +36,33 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
       { label: 'Profile', href: '/dashboard/employee/profile', icon: '👤' },
       { label: 'Leaves', href: '/dashboard/employee/leaves', icon: '🏖️' },
     ],
-  };
+} as const;
 
-  const items = (navigationItems[role as keyof typeof navigationItems] || navigationItems.employee);
+interface SidebarProps {
+  userEmail?: string | null;
+  userName?: string | null;
+  avatarUrl?: string | null;
+  role?: string | null;
+}
+
+export default function Sidebar({ userEmail, userName, avatarUrl, role }: SidebarProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const supabase = useSupabase();
+
+  const isActive = useCallback((path: string) => pathname.startsWith(path), [pathname]);
+
+  const items = useMemo(
+    () => NAV_ITEMS[role as keyof typeof NAV_ITEMS] ?? NAV_ITEMS.employee,
+    [role]
+  );
+
+  const handleLogout = useCallback(async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  }, [supabase, router]);
 
   return (
     <>

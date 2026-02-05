@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import Image from 'next/image';
 import Sidebar from '@/components/Sidebar';
 
@@ -32,7 +32,7 @@ export default function EmployeeProfilePage() {
   const [saving, setSaving] = useState(false);
   const [editData, setEditData] = useState<EmployeeProfile | null>(null);
   const [email, setEmail] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useSupabase();
 
   useEffect(() => {
     const fetchProfile = async () => {

@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/hooks/useSupabase'
 
 export default function SetPasswordPage() {
   const router = useRouter()
+  const supabase = useSupabase()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -14,8 +15,6 @@ export default function SetPasswordPage() {
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    const supabase = createClient()
-  
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setChecking(false)
@@ -23,6 +22,7 @@ export default function SetPasswordPage() {
     }
   
     checkUser()
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase is stable from useSupabase
   }, [router])
   
 
@@ -39,7 +39,6 @@ export default function SetPasswordPage() {
     }
     setLoading(true)
 
-    const supabase = createClient()
     const { error: updateError } = await supabase.auth.updateUser({ password })
 
     setLoading(false)

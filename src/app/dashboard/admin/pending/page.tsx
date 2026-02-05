@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/hooks/useSupabase'
 import Sidebar from '@/components/Sidebar'
 
 type PendingUser = {
@@ -22,7 +22,7 @@ export default function PendingRequestsPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const supabase = createClient()
+  const supabase = useSupabase()
 
   useEffect(() => {
     const loadData = async () => {

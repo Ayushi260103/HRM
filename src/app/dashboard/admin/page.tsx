@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/hooks/useSupabase'
 import Sidebar from '@/components/Sidebar'
 import Notifications from '@/components/Notifications'
 
@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<UserState>(initialUserState)
 
-  const supabase = useMemo(() => createClient(), [])
+  const supabase = useSupabase()
 
   useEffect(() => {
     let cancelled = false

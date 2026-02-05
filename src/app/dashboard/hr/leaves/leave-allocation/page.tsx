@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/hooks/useSupabase'
 import Sidebar from '@/components/Sidebar'
 
 type LeaveType = {
@@ -36,7 +36,7 @@ const SYSTEM_TYPES = [
 
 export default function LeaveAllocationPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useSupabase()
 
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState<string | null>(null)
