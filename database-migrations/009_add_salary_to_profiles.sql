@@ -24,9 +24,9 @@ BEGIN
     RETURN;
   END IF;
 
-  -- HR can update employee and hr, NOT admin
-  IF caller_role = 'hr' AND target_role IS NOT NULL AND target_role != 'admin' THEN
-    UPDATE profiles SET salary = new_salary WHERE id = emp_id;
+  -- HR can update ONLY employees
+  IF caller_role = 'hr' AND target_role = 'employee' THEN
+    UPDATE public.profiles SET salary = new_salary WHERE id = emp_id;
     RETURN;
   END IF;
 
