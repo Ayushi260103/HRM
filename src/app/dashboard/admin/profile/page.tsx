@@ -1,9 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import Sidebar from '@/components/Sidebar';
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 interface EmployeeProfile {
   id: string;
@@ -98,45 +102,86 @@ export default function EmployeeProfilePage() {
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      setUploading(true);
       const file = event.target.files?.[0];
-      
       if (!file) return;
 
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setError('Only JPG, PNG, or WEBP images allowed.');
+        event.target.value = '';
+        return;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        setError('Image must be smaller than 2MB.');
+        event.target.value = '';
+        return;
+      }
+
+      setUploading(true);
+      setError(null);
+
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!user) {
+        setError('User not authenticated');
+        setUploading(false);
+        event.target.value = '';
+        return;
+      }
 
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const filePath = `${user.id}/avatar.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('employee-avatars')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        setError(uploadError.message);
+        setUploading(false);
+        event.target.value = '';
+        return;
+      }
 
       const { data } = supabase.storage
         .from('employee-avatars')
         .getPublicUrl(filePath);
 
+      const avatarUrl = `${data.publicUrl}?t=${Date.now()}`;
+
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: data.publicUrl })
+        .update({ avatar_url: avatarUrl })
         .eq('id', user.id);
 
-      if (updateError) throw updateError;
-
-      setProfile(prev => prev ? { ...prev, avatar_url: data.publicUrl } : null);
+      if (updateError) {
+        setError(updateError.message);
+      } else {
+        setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload image');
     } finally {
       setUploading(false);
+      event.target.value = '';
     }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading profile...</p></div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p className="text-red-600">Error: {error}</p></div>;
+  if (error) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50 p-4">
+      <p className="text-red-600 text-center">Error: {error}</p>
+      <div className="flex gap-4">
+        {profile && (
+          <button onClick={() => setError(null)} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700 font-medium">
+            Back to Profile
+          </button>
+        )}
+        <Link href="/dashboard/admin" className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium">
+          Back to Dashboard
+        </Link>
+      </div>
+    </div>
+  );
   if (!profile) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Profile not found</p></div>;
 
   return (
