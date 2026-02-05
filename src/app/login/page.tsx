@@ -50,7 +50,7 @@ export default function LoginPage() {
       // Check user status and profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('status, role, full_name, department, position, phone, hire_date, dob, avatar_url')
+        .select('status, role, full_name, department, position, phone, hire_date, joining_date, dob, avatar_url')
         .eq('id', user.id)
         .single();
 
@@ -73,7 +73,7 @@ export default function LoginPage() {
       }
 
       // Status is 'active' - check if profile is complete
-      const requiredFields = ['full_name', 'department', 'position', 'phone', 'hire_date', 'dob'] as const
+      const requiredFields = ['full_name', 'department', 'position', 'phone', 'hire_date', 'joining_date', 'dob'] as const
       const isProfileIncomplete = requiredFields.some(field => !profile[field]) || !profile.avatar_url
       if (isProfileIncomplete) {
         router.push('/profile-completion');

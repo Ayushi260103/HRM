@@ -14,6 +14,7 @@ interface EmployeeProfile {
   position: string
   phone: string
   hire_date: string
+  joining_date: string
   dob: string
   avatar_url?: string
   email_id?: string
@@ -57,7 +58,7 @@ export default function EmployeeDashboard() {
           return
         }
 
-        const requiredFields = ['full_name', 'department', 'position', 'phone', 'hire_date', 'dob']
+        const requiredFields = ['full_name', 'department', 'position', 'phone', 'hire_date', 'joining_date', 'dob']
         const isProfileIncomplete = requiredFields.some(field => !data[field])
 
         if (isProfileIncomplete || !data.avatar_url) {

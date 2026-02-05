@@ -15,6 +15,7 @@ interface FormData {
   position: string;
   phone: string;
   hire_date: string;
+  joining_date: string;
   dob: string;
   avatar_url: string;
   years_of_experience: number;
@@ -27,6 +28,7 @@ export default function ProfileCompletionPage() {
     position: '',
     phone: '',
     hire_date: '',
+    joining_date: '',
     dob: '',
     avatar_url: '',
     years_of_experience: 0,
@@ -61,6 +63,7 @@ export default function ProfileCompletionPage() {
             position: data.position || '',
             phone: data.phone || '',
             hire_date: data.hire_date || '',
+            joining_date: data.joining_date || '',
             dob: data.dob || '',
             avatar_url: data.avatar_url || '',
             years_of_experience: data.years_of_experience || 0,
@@ -151,11 +154,17 @@ export default function ProfileCompletionPage() {
       if (!user) throw new Error('User not authenticated');
 
       // Check required fields
-      const requiredFields = ['full_name', 'department', 'position', 'phone', 'hire_date', 'dob', 'years_of_experience'];
+      const requiredFields = ['full_name', 'department', 'position', 'phone', 'hire_date', 'joining_date', 'dob', 'years_of_experience'];
       const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
       
       if (missingFields.length > 0) {
         setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        setLoading(false);
+        return;
+      }
+
+      if (formData.joining_date < formData.hire_date) {
+        setError('Joining date must be on or after hire date');
         setLoading(false);
         return;
       }
@@ -174,6 +183,7 @@ export default function ProfileCompletionPage() {
           position: formData.position,
           phone: formData.phone,
           hire_date: formData.hire_date,
+          joining_date: formData.joining_date,
           dob: formData.dob,
           avatar_url: formData.avatar_url,
           years_of_experience: formData.years_of_experience,
@@ -331,7 +341,7 @@ export default function ProfileCompletionPage() {
               />
             </div>
 
-            <div className="col-span-2">
+            <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Hire Date *
               </label>
@@ -339,6 +349,19 @@ export default function ProfileCompletionPage() {
                 type="date"
                 name="hire_date"
                 value={formData.hire_date}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Joining Date *
+              </label>
+              <input
+                type="date"
+                name="joining_date"
+                value={formData.joining_date}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
                 required

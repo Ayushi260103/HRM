@@ -16,6 +16,7 @@ interface EmployeeProfile {
   position: string;
   phone: string;
   hire_date: string;
+  joining_date: string;
   dob: string;
   avatar_url?: string;
   email_id?: string;
@@ -68,8 +69,13 @@ export default function EmployeeProfilePage() {
 
   const handleSave = async () => {
     if (!editData) return;
+    if (editData.joining_date < editData.hire_date) {
+      setError('Joining date must be on or after hire date');
+      return;
+    }
     try {
       setSaving(true);
+      setError(null);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
@@ -81,6 +87,7 @@ export default function EmployeeProfilePage() {
           position: editData.position,
           phone: editData.phone,
           hire_date: editData.hire_date,
+          joining_date: editData.joining_date,
           dob: editData.dob,
           years_of_experience: editData.years_of_experience,
         })
@@ -302,7 +309,7 @@ export default function EmployeeProfilePage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Hire Date</label>
+<label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Hire Date</label>
                   {isEditing ? (
                     <input
                       type="date"
@@ -311,11 +318,24 @@ export default function EmployeeProfilePage() {
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                   ) : (
-                    <p className="text-lg font-semibold text-gray-900">{new Date(profile.hire_date).toLocaleDateString()}</p>
+                    <p className="text-lg font-semibold text-gray-900">{profile.hire_date ? new Date(profile.hire_date).toLocaleDateString() : '—'}</p>
                   )}
                 </div>
                 <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Years of Experience</label>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Joining Date</label>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={toDateInput(editData?.joining_date)}
+                      onChange={(e) => setEditData(prev => prev ? { ...prev, joining_date: e.target.value } : prev)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{profile.joining_date ? new Date(profile.joining_date).toLocaleDateString() : '—'}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Years of Experience</label>
                 {isEditing ? (
                   <input
                     type="number"
