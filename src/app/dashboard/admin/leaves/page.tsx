@@ -68,7 +68,7 @@ export default function AdminLeavesHomePage() {
             <p className="text-gray-600 mt-2">Choose what you want to manage</p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Link href="/dashboard/admin/leaves/leave-requests" className="block group">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all">
                 <div className="text-3xl mb-3">📄</div>
@@ -86,6 +86,26 @@ export default function AdminLeavesHomePage() {
                   Leave Allocation
                 </h3>
                 <p className="text-sm text-gray-600 mt-2">Create leave types and allocate balances</p>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/admin/leaves/holiday-allocation" className="block group">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all">
+                <div className="text-3xl mb-3">📅</div>
+                <h3 className="font-semibold text-gray-900 text-lg group-hover:text-blue-600 transition">
+                  Holiday Allocation
+                </h3>
+                <p className="text-sm text-gray-600 mt-2">Mark office closed dates (holidays)</p>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/admin/leaves/weekend-allocation" className="block group">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all">
+                <div className="text-3xl mb-3">🗓️</div>
+                <h3 className="font-semibold text-gray-900 text-lg group-hover:text-blue-600 transition">
+                  Weekend Allocation
+                </h3>
+                <p className="text-sm text-gray-600 mt-2">Set weekend days for HR and employees</p>
               </div>
             </Link>
           </div>

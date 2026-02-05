@@ -4,12 +4,16 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/hooks/useSupabase'
 import Sidebar from '@/components/Sidebar'
+import { getLocalDateString, getLocalDayOfWeek } from '@/lib/utils/date'
+
+type DayStatus = 'holiday' | 'on_leave' | 'week_off' | null
 
 type Log = {
     id: string
     user_id: string
     clock_in: string | null
     clock_out: string | null
+    dayStatus: DayStatus
     profile: {
       full_name: string | null
       role: string | null
@@ -25,7 +29,7 @@ export default function AttendancePage() {
     const [email, setEmail] = useState<string | null>(null)
     const [userName, setUserName] = useState<string | null>(null)
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'clocked_out' | 'not_clocked_in'>('all')
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'clocked_out' | 'not_clocked_in' | 'holiday' | 'on_leave' | 'week_off'>('all')
     const [rangeFilter, setRangeFilter] = useState<'last_15' | 'last_30' | 'prev_month' | 'last_3_months' | 'last_6_months' | 'year' | 'custom'>('last_15')
     const [customStart, setCustomStart] = useState('')
     const [customEnd, setCustomEnd] = useState('')
@@ -111,7 +115,40 @@ export default function AttendancePage() {
                 return
             }
 
-            // 2️⃣ Get today's attendance logs
+            const todayStr = getLocalDateString()
+            const dayOfWeek = getLocalDayOfWeek()
+            const userIds = profiles.map(p => p.id)
+
+            // 2️⃣ Is today an office holiday?
+            const { data: holidayRow } = await supabase
+                .from('office_holidays')
+                .select('id')
+                .eq('date', todayStr)
+                .maybeSingle()
+            const isHoliday = !!holidayRow
+
+            // 3️⃣ User weekends (user_id -> weekend_days array)
+            const { data: userWeekendsRows } = await supabase
+                .from('user_weekends')
+                .select('user_id, weekend_days')
+                .in('user_id', userIds)
+            const userWeekOff = new Set<string>()
+            for (const row of userWeekendsRows ?? []) {
+                const days = (row.weekend_days ?? []) as number[]
+                if (days.includes(dayOfWeek)) userWeekOff.add(row.user_id)
+            }
+
+            // 4️⃣ Approved leave covering today
+            const { data: leaveRows } = await supabase
+                .from('leave_requests')
+                .select('user_id')
+                .eq('status', 'approved')
+                .lte('start_date', todayStr)
+                .gte('end_date', todayStr)
+                .in('user_id', userIds)
+            const userOnLeave = new Set((leaveRows ?? []).map(r => r.user_id))
+
+            // 5️⃣ Get today's attendance logs
             const { data: attendance, error } = await supabase
                 .from('attendance_logs')
                 .select('id, user_id, clock_in, clock_out')
@@ -124,7 +161,7 @@ export default function AttendancePage() {
                 return
             }
 
-            // 3️⃣ Build lookup map of latest log per user
+            // 6️⃣ Build lookup map of latest log per user
             const attendanceMap: Record<string, typeof attendance[number]> = {}
             for (const log of attendance) {
                 if (!attendanceMap[log.user_id]) {
@@ -132,14 +169,19 @@ export default function AttendancePage() {
                 }
             }
 
-            // 4️⃣ Merge profiles + today's attendance
+            // 7️⃣ Merge profiles + today's attendance + day status (priority: holiday > on_leave > week_off)
             const mergedLogs: Log[] = profiles.map(profile => {
                 const log = attendanceMap[profile.id]
+                let dayStatus: DayStatus = null
+                if (isHoliday) dayStatus = 'holiday'
+                else if (userOnLeave.has(profile.id)) dayStatus = 'on_leave'
+                else if (userWeekOff.has(profile.id)) dayStatus = 'week_off'
                 return {
                     id: log?.id ?? `${profile.id}-today`,
                     user_id: profile.id,
                     clock_in: log?.clock_in ?? null,
                     clock_out: log?.clock_out ?? null,
+                    dayStatus,
                     profile,
                 }
             })
@@ -156,9 +198,12 @@ export default function AttendancePage() {
 
     const filteredLogs = logs.filter(log => {
         if (statusFilter === 'all') return true
-        if (statusFilter === 'not_clocked_in') return !log.clock_in
-        if (statusFilter === 'active') return !!log.clock_in && !log.clock_out
-        return !!log.clock_in && !!log.clock_out
+        if (statusFilter === 'holiday') return log.dayStatus === 'holiday'
+        if (statusFilter === 'on_leave') return log.dayStatus === 'on_leave'
+        if (statusFilter === 'week_off') return log.dayStatus === 'week_off'
+        if (statusFilter === 'not_clocked_in') return !log.dayStatus && !log.clock_in
+        if (statusFilter === 'active') return !log.dayStatus && !!log.clock_in && !log.clock_out
+        return !log.dayStatus && !!log.clock_in && !!log.clock_out
     })
 
     const downloadReport = () => {
@@ -309,6 +354,36 @@ export default function AttendancePage() {
                         >
                             Not Clocked In
                         </button>
+                        <button
+                            onClick={() => setStatusFilter('holiday')}
+                            className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                                statusFilter === 'holiday'
+                                    ? 'bg-amber-600 text-white border-amber-600'
+                                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                            }`}
+                        >
+                            Holiday
+                        </button>
+                        <button
+                            onClick={() => setStatusFilter('on_leave')}
+                            className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                                statusFilter === 'on_leave'
+                                    ? 'bg-purple-600 text-white border-purple-600'
+                                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                            }`}
+                        >
+                            On Leave
+                        </button>
+                        <button
+                            onClick={() => setStatusFilter('week_off')}
+                            className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                                statusFilter === 'week_off'
+                                    ? 'bg-slate-600 text-white border-slate-600'
+                                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                            }`}
+                        >
+                            Week Off
+                        </button>
                     </div>
 
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -340,7 +415,13 @@ export default function AttendancePage() {
                                                 {log.clock_out ? new Date(log.clock_out).toLocaleString() : '—'}
                                             </td>
                                             <td className="px-6 py-4">
-                                                {!log.clock_in ? (
+                                                {log.dayStatus === 'holiday' ? (
+                                                    <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold">Holiday</span>
+                                                ) : log.dayStatus === 'on_leave' ? (
+                                                    <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-semibold">On Leave</span>
+                                                ) : log.dayStatus === 'week_off' ? (
+                                                    <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Week Off</span>
+                                                ) : !log.clock_in ? (
                                                     <span className="px-3 py-1 bg-gray-50 text-gray-700 rounded-full text-xs font-semibold">Not Clocked In</span>
                                                 ) : log.clock_out ? (
                                                     <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">Clocked Out</span>

@@ -16,7 +16,7 @@ export default function HRDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<UserState>({ email: null, userName: null, avatarUrl: null, userId: null })
 
-  const { clockInTime, clockOutTime, loading: loadingAttendance, formatTime, handleClockIn, handleClockOut } = useAttendance(user.userId)
+  const { clockInTime, clockOutTime, loading: loadingAttendance, clockInBlockReason, formatTime, handleClockIn, handleClockOut } = useAttendance(user.userId)
 
   useEffect(() => {
     let cancelled = false
@@ -99,11 +99,17 @@ export default function HRDashboardPage() {
                     <p className="text-lg font-bold text-gray-900">{formatTime(clockOutTime)}</p>
                   </div>
                 </div>
+                {clockInBlockReason && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                    Cannot clock in: {clockInBlockReason}
+                  </div>
+                )}
                 <div className="flex flex-col sm:flex-row gap-3">
                   {!clockInTime && (
                     <button
                       onClick={handleClockIn}
-                      className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition"
+                      disabled={!!clockInBlockReason}
+                      className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       🟢 Clock In
                     </button>
