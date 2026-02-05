@@ -127,7 +127,7 @@ export default function Notifications({ role, userId }: NotificationsProps) {
             }}
           />
 
-          <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+          <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-80 sm:max-w-none sm:w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 max-h-[70vh] sm:max-h-96 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div className="p-4 border-b border-gray-200 bg-gray-50 sticky top-0">
               <h3 className="font-bold text-gray-900">Notifications</h3>
               {unreadCount > 0 && (

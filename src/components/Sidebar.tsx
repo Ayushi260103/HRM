@@ -132,10 +132,12 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
         </div>
       </aside>
 
-      {/* Mobile Menu Button */}
+      {/* Mobile Menu Button - safe area for notched devices */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed left-4 top-4 z-50 lg:hidden p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+        className="fixed left-4 top-4 z-50 lg:hidden p-2.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+        style={{ top: 'max(1rem, env(safe-area-inset-top))', left: 'max(1rem, env(safe-area-inset-left))' }}
+        aria-label={isOpen ? 'Close menu' : 'Open menu'}
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           {isOpen ? (

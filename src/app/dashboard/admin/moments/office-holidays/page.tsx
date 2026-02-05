@@ -87,7 +87,7 @@ export default function AdminOfficeHolidaysPage() {
         {user.userId && <Notifications role="admin" userId={user.userId} />}
       </div>
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64">
+      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
         <div className="max-w-4xl">
           <Link href="/dashboard/admin/moments" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
             ← Back to Moments That Matter

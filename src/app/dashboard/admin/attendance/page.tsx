@@ -267,18 +267,18 @@ export default function AttendancePage() {
         <div className="min-h-screen flex flex-col bg-gray-50">
             <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
-            <main className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 lg:ml-64">
+            <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
                 <div className="w-full max-w-7xl">
-                    <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="mb-4 sm:mb-6 md:mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Attendance Logs</h1>
-                            <p className="text-gray-600 mt-2">View all employee clock in/out records</p>
+                            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 truncate">Attendance Logs</h1>
+                            <p className="text-gray-600 mt-1 sm:mt-2 text-xs sm:text-sm">View all employee clock in/out records</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                             <select
                                 value={rangeFilter}
                                 onChange={e => setRangeFilter(e.target.value as typeof rangeFilter)}
-                                className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                                className="border border-gray-200 rounded-lg px-3 py-2 text-xs sm:text-sm bg-white min-w-0 flex-1 sm:flex-none sm:min-w-[140px]"
                             >
                                 <option value="last_15">Last 15 days</option>
                                 <option value="last_30">Last 30 days</option>
@@ -294,30 +294,30 @@ export default function AttendancePage() {
                                         type="date"
                                         value={customStart}
                                         onChange={e => setCustomStart(e.target.value)}
-                                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                                        className="border border-gray-200 rounded-lg px-3 py-2 text-xs sm:text-sm bg-white min-w-0 w-full sm:w-auto"
                                     />
                                     <input
                                         type="date"
                                         value={customEnd}
                                         onChange={e => setCustomEnd(e.target.value)}
-                                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                                        className="border border-gray-200 rounded-lg px-3 py-2 text-xs sm:text-sm bg-white min-w-0 w-full sm:w-auto"
                                     />
                                 </>
                             )}
                             <button
                                 onClick={downloadReport}
                                 disabled={rangeFilter === 'custom' && (!customStart || !customEnd || customStart > customEnd)}
-                                className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50"
+                                className="px-3 py-2 sm:px-4 rounded-lg text-xs sm:text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap"
                             >
                                 Download Report
                             </button>
                         </div>
                     </div>
 
-                    <div className="mb-4 flex flex-wrap gap-2">
+                    <div className="mb-3 sm:mb-4 flex flex-wrap gap-1.5 sm:gap-2">
                         <button
                             onClick={() => setStatusFilter('all')}
-                            className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border ${
                                 statusFilter === 'all'
                                     ? 'bg-gray-900 text-white border-gray-900'
                                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
@@ -327,7 +327,7 @@ export default function AttendancePage() {
                         </button>
                         <button
                             onClick={() => setStatusFilter('active')}
-                            className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border ${
                                 statusFilter === 'active'
                                     ? 'bg-green-600 text-white border-green-600'
                                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
@@ -337,7 +337,7 @@ export default function AttendancePage() {
                         </button>
                         <button
                             onClick={() => setStatusFilter('clocked_out')}
-                            className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border ${
                                 statusFilter === 'clocked_out'
                                     ? 'bg-blue-600 text-white border-blue-600'
                                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
@@ -347,7 +347,7 @@ export default function AttendancePage() {
                         </button>
                         <button
                             onClick={() => setStatusFilter('not_clocked_in')}
-                            className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border ${
                                 statusFilter === 'not_clocked_in'
                                     ? 'bg-gray-600 text-white border-gray-600'
                                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
@@ -357,7 +357,7 @@ export default function AttendancePage() {
                         </button>
                         <button
                             onClick={() => setStatusFilter('holiday')}
-                            className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border ${
                                 statusFilter === 'holiday'
                                     ? 'bg-amber-600 text-white border-amber-600'
                                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
@@ -367,7 +367,7 @@ export default function AttendancePage() {
                         </button>
                         <button
                             onClick={() => setStatusFilter('on_leave')}
-                            className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border ${
                                 statusFilter === 'on_leave'
                                     ? 'bg-purple-600 text-white border-purple-600'
                                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
@@ -377,7 +377,7 @@ export default function AttendancePage() {
                         </button>
                         <button
                             onClick={() => setStatusFilter('week_off')}
-                            className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border ${
                                 statusFilter === 'week_off'
                                     ? 'bg-slate-600 text-white border-slate-600'
                                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
@@ -387,47 +387,47 @@ export default function AttendancePage() {
                         </button>
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div className="overflow-x-auto">
-                            <table className="min-w-full text-sm">
+                            <table className="min-w-full text-xs sm:text-sm">
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
-                                        <th className="px-6 py-3 text-left font-semibold text-gray-900">Employee</th>
-                                        <th className="px-6 py-3 text-left font-semibold text-gray-900">Role</th>
-                                        <th className="px-6 py-3 text-left font-semibold text-gray-900">Clock In</th>
-                                        <th className="px-6 py-3 text-left font-semibold text-gray-900">Clock Out</th>
-                                        <th className="px-6 py-3 text-left font-semibold text-gray-900">Status</th>
+                                        <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-semibold text-gray-900 whitespace-nowrap">Employee</th>
+                                        <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-semibold text-gray-900 whitespace-nowrap">Role</th>
+                                        <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-semibold text-gray-900 whitespace-nowrap">Clock In</th>
+                                        <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-semibold text-gray-900 whitespace-nowrap">Clock Out</th>
+                                        <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-semibold text-gray-900 whitespace-nowrap">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {filteredLogs.map(log => (
                                         <tr key={log.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 text-gray-900">
+                                            <td className="px-3 py-2 sm:px-4 sm:py-3 text-gray-900 max-w-[120px] sm:max-w-none truncate sm:whitespace-normal">
                                                 {log.profile?.full_name || '—'}
                                             </td>
 
-                                            <td className="px-6 py-4 text-gray-700 capitalize">
+                                            <td className="px-3 py-2 sm:px-4 sm:py-3 text-gray-700 capitalize whitespace-nowrap">
                                                 {log.profile?.role || '—'}
                                             </td>
-                                            <td className="px-6 py-4 text-gray-700">
+                                            <td className="px-3 py-2 sm:px-4 sm:py-3 text-gray-700 whitespace-nowrap">
                                                 {log.clock_in ? new Date(log.clock_in).toLocaleString() : '—'}
                                             </td>
-                                            <td className="px-6 py-4 text-gray-700">
+                                            <td className="px-3 py-2 sm:px-4 sm:py-3 text-gray-700 whitespace-nowrap">
                                                 {log.clock_out ? new Date(log.clock_out).toLocaleString() : '—'}
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-3 py-2 sm:px-4 sm:py-3">
                                                 {log.dayStatus === 'holiday' ? (
-                                                    <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold">Holiday</span>
+                                                    <span className="inline-block px-2 py-0.5 sm:px-3 sm:py-1 bg-amber-50 text-amber-700 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">Holiday</span>
                                                 ) : log.dayStatus === 'on_leave' ? (
-                                                    <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-semibold">On Leave</span>
+                                                    <span className="inline-block px-2 py-0.5 sm:px-3 sm:py-1 bg-purple-50 text-purple-700 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">On Leave</span>
                                                 ) : log.dayStatus === 'week_off' ? (
-                                                    <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Week Off</span>
+                                                    <span className="inline-block px-2 py-0.5 sm:px-3 sm:py-1 bg-slate-100 text-slate-700 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">Week Off</span>
                                                 ) : !log.clock_in ? (
-                                                    <span className="px-3 py-1 bg-gray-50 text-gray-700 rounded-full text-xs font-semibold">Not Clocked In</span>
+                                                    <span className="inline-block px-2 py-0.5 sm:px-3 sm:py-1 bg-gray-50 text-gray-700 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">Not Clocked In</span>
                                                 ) : log.clock_out ? (
-                                                    <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">Clocked Out</span>
+                                                    <span className="inline-block px-2 py-0.5 sm:px-3 sm:py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">Clocked Out</span>
                                                 ) : (
-                                                    <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold">Active</span>
+                                                    <span className="inline-block px-2 py-0.5 sm:px-3 sm:py-1 bg-green-50 text-green-700 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">Active</span>
                                                 )}
                                             </td>
                                         </tr>
@@ -437,8 +437,8 @@ export default function AttendancePage() {
                         </div>
 
                         {logs.length === 0 && (
-                            <div className="p-12 text-center">
-                                <p className="text-gray-500">No attendance records found.</p>
+                            <div className="p-6 sm:p-12 text-center">
+                                <p className="text-gray-500 text-sm sm:text-base">No attendance records found.</p>
                             </div>
                         )}
                     </div>
