@@ -19,6 +19,7 @@ interface EmployeeProfile {
   dob: string;
   avatar_url?: string;
   email_id?: string;
+  years_of_experience: number;
 }
 
 export default function EmployeeProfilePage() {
@@ -81,10 +82,14 @@ export default function EmployeeProfilePage() {
           phone: editData.phone,
           hire_date: editData.hire_date,
           dob: editData.dob,
+          years_of_experience: editData.years_of_experience,
         })
         .eq('id', user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        setError(updateError.message);
+        return;
+      }
 
       setProfile(prev => prev ? { ...prev, ...editData } : editData);
       setIsEditing(false);
@@ -310,6 +315,19 @@ export default function EmployeeProfilePage() {
                     />
                   ) : (
                     <p className="text-lg font-semibold text-gray-900">{new Date(profile.hire_date).toLocaleDateString()}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Years of Experience</label>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={editData?.years_of_experience || ''}
+                      onChange={(e) => setEditData(prev => prev ? { ...prev, years_of_experience: parseInt(e.target.value) } : prev)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{profile.years_of_experience}</p>
                   )}
                 </div>
               </div>

@@ -17,6 +17,7 @@ interface FormData {
   hire_date: string;
   dob: string;
   avatar_url: string;
+  years_of_experience: number;
 }
 
 export default function ProfileCompletionPage() {
@@ -28,6 +29,7 @@ export default function ProfileCompletionPage() {
     hire_date: '',
     dob: '',
     avatar_url: '',
+    years_of_experience: 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export default function ProfileCompletionPage() {
             hire_date: data.hire_date || '',
             dob: data.dob || '',
             avatar_url: data.avatar_url || '',
+            years_of_experience: data.years_of_experience || 0,
           }));
           if (data.avatar_url) setPreviewUrl(data.avatar_url);
         }
@@ -148,15 +151,19 @@ export default function ProfileCompletionPage() {
       if (!user) throw new Error('User not authenticated');
 
       // Check required fields
-      const requiredFields = ['full_name', 'department', 'position', 'phone', 'hire_date', 'dob'];
+      const requiredFields = ['full_name', 'department', 'position', 'phone', 'hire_date', 'dob', 'years_of_experience'];
       const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
       
       if (missingFields.length > 0) {
-        throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        setLoading(false);
+        return;
       }
 
       if (!formData.avatar_url) {
-        throw new Error('Please upload a profile picture');
+        setError('Please upload a profile picture');
+        setLoading(false);
+        return;
       }
 
       const { error: updateError } = await supabase
@@ -169,10 +176,15 @@ export default function ProfileCompletionPage() {
           hire_date: formData.hire_date,
           dob: formData.dob,
           avatar_url: formData.avatar_url,
+          years_of_experience: formData.years_of_experience,
         })
         .eq('id', user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        setError(updateError.message);
+        setLoading(false);
+        return;
+      }
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -180,7 +192,11 @@ export default function ProfileCompletionPage() {
         .eq('id', user.id)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        setError(profileError.message);
+        setLoading(false);
+        return;
+      }
 
       if(profile.role === 'employee'){
         router.push('/dashboard/employee');
@@ -323,6 +339,19 @@ export default function ProfileCompletionPage() {
                 type="date"
                 name="hire_date"
                 value={formData.hire_date}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Years of Experience *
+              </label>
+              <input
+                type="number"
+                name="years_of_experience"
+                value={formData.years_of_experience}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
                 required
