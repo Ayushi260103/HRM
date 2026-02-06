@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/hooks/useSupabase'
+import { capitalizeName } from '@/lib/utils/string'
 import Sidebar from '@/components/Sidebar'
+import LeavesNav from '@/components/LeavesNav'
 
 type LeaveType = {
   id: string
@@ -239,31 +241,32 @@ export default function LeaveAllocationPage() {
     setSavingAllocation(false)
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Loading leave allocation...</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
-      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
-        <div className="w-full max-w-6xl">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Leave Allocation</h1>
+      <main className="admin-main flex flex-col min-h-0">
+        <div className="w-full max-w-6xl flex flex-col flex-1 min-h-0">
+          <div className="shrink-0">
+            <LeavesNav />
+          </div>
+          <div className="mb-4 shrink-0">
+            <h1 className="text-3xl font-bold text-gray-900">Leave allocation</h1>
             <p className="text-gray-600 mt-2">Create leave types and allocate yearly balances</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Leave Types</h2>
-              <div className="space-y-3">
+          {loading ? (
+            <div className="py-12 flex justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            </div>
+          ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 lg:items-stretch">
+            {/* Leave Types - same height as right panel */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col min-h-0">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 shrink-0">Leave Types</h2>
+              <div className="space-y-3 overflow-y-auto min-h-0 flex-1">
                 {leaveTypes.map(type => (
-                  <div key={type.id} className="flex items-center gap-2">
+                  <div key={type.id} className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => setSelectedTypeId(type.id)}
                       className={`flex-1 text-left px-3 py-2 rounded-lg border ${
@@ -285,7 +288,7 @@ export default function LeaveAllocationPage() {
                 ))}
               </div>
 
-              <div className="mt-6 border-t border-gray-200 pt-4">
+              <div className="mt-6 border-t border-gray-200 pt-4 shrink-0">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Add Custom Type</h3>
                 <input
                   type="text"
@@ -312,8 +315,9 @@ export default function LeaveAllocationPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
-              <div className="flex items-center justify-between mb-4">
+            {/* Allocate Balances - same height, only employee table scrolls */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:col-span-2 flex flex-col min-h-0">
+              <div className="flex items-center justify-between mb-4 shrink-0">
                 <h2 className="text-lg font-semibold text-gray-900">Allocate Balances</h2>
                 <button
                   onClick={handleApplyDefaults}
@@ -324,7 +328,7 @@ export default function LeaveAllocationPage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 shrink-0">
                 <select
                   value={allocationUserId}
                   onChange={(e) => setAllocationUserId(e.target.value)}
@@ -333,7 +337,7 @@ export default function LeaveAllocationPage() {
                   <option value="">Select user</option>
                   {employees.map(emp => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.full_name || emp.email_id || emp.id}
+                      {capitalizeName(emp.full_name) || emp.email_id || emp.id}
                     </option>
                   ))}
                 </select>
@@ -363,20 +367,20 @@ export default function LeaveAllocationPage() {
               <button
                 onClick={handleAllocate}
                 disabled={savingAllocation}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
+                className="mb-4 shrink-0 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 w-fit"
               >
                 {savingAllocation ? 'Saving...' : 'Save Allocation'}
               </button>
 
-              <div className="mt-8 overflow-x-auto">
+              <div className="flex-1 min-h-0 overflow-auto border border-gray-200 rounded-lg">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                     <tr>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-900">Employee</th>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-900">Role</th>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-900">Allocated</th>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-900">Used</th>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-900">Remaining</th>
+                      <th className="px-4 py-2 text-left font-semibold text-gray-900 bg-gray-50">Employee</th>
+                      <th className="px-4 py-2 text-left font-semibold text-gray-900 bg-gray-50">Role</th>
+                      <th className="px-4 py-2 text-left font-semibold text-gray-900 bg-gray-50">Allocated</th>
+                      <th className="px-4 py-2 text-left font-semibold text-gray-900 bg-gray-50">Used</th>
+                      <th className="px-4 py-2 text-left font-semibold text-gray-900 bg-gray-50">Remaining</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -387,7 +391,7 @@ export default function LeaveAllocationPage() {
                       const remaining = Math.max(allocated - used, 0)
                       return (
                         <tr key={emp.id}>
-                          <td className="px-4 py-2 text-gray-900">{emp.full_name || emp.email_id || '—'}</td>
+                          <td className="px-4 py-2 text-gray-900">{capitalizeName(emp.full_name) || emp.email_id || '—'}</td>
                           <td className="px-4 py-2 text-gray-700 capitalize">{emp.role || '—'}</td>
                           <td className="px-4 py-2 text-gray-700">{allocated}</td>
                           <td className="px-4 py-2 text-gray-700">{used}</td>
@@ -400,6 +404,7 @@ export default function LeaveAllocationPage() {
               </div>
             </div>
           </div>
+          )}
         </div>
       </main>
     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useSupabase } from '@/hooks/useSupabase'
+import { capitalizeName } from '@/lib/utils/string'
 
 type Announcement = {
   id: string
@@ -22,6 +23,7 @@ export default function AnnouncementsPanel({ userId, userName, userRole }: Annou
   const supabase = useSupabase()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
+  const [showCreateForm, setShowCreateForm] = useState(false)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -64,7 +66,7 @@ export default function AnnouncementsPanel({ userId, userName, userRole }: Annou
           title: title.trim(),
           body: body.trim(),
           author_id: userId,
-          author_name: userName,
+          author_name: capitalizeName(userName),
           author_role: userRole,
         })
         .select('id, title, body, author_name, author_role, created_at')
@@ -76,6 +78,7 @@ export default function AnnouncementsPanel({ userId, userName, userRole }: Annou
         setAnnouncements(prev => [data, ...prev])
         setTitle('')
         setBody('')
+        setShowCreateForm(false)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post announcement')
@@ -85,65 +88,98 @@ export default function AnnouncementsPanel({ userId, userName, userRole }: Annou
   }
 
   if (loading) {
-    return <div className="text-gray-600">Loading announcements...</div>
+    return <p style={{ color: 'var(--text-secondary)' }}>Loading announcements...</p>
   }
 
   return (
-    <div className="space-y-8">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Create Announcement</h2>
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              placeholder="Announcement title"
-              maxLength={120}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Message</label>
-            <textarea
-              value={body}
-              onChange={e => setBody(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
-              placeholder="Write your announcement..."
-              rows={4}
-              maxLength={1000}
-            />
-          </div>
+    <div className="space-y-6">
+      <div className="card card-body">
+        {!showCreateForm ? (
           <button
-            type="submit"
-            disabled={submitting}
-            className="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+            type="button"
+            onClick={() => setShowCreateForm(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-white transition-colors hover:opacity-90"
+            style={{ backgroundColor: 'var(--primary)' }}
           >
-            {submitting ? 'Posting...' : 'Post Announcement'}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add announcement
           </button>
-        </form>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Create Announcement</h2>
+              <button
+                type="button"
+                onClick={() => { setShowCreateForm(false); setError(null); setTitle(''); setBody(''); }}
+                className="text-sm font-medium rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                Cancel
+              </button>
+            </div>
+            {error && (
+              <div className="mb-4 rounded-lg px-4 py-3 text-sm font-medium border border-red-200 bg-red-50 text-red-700">
+                {error}
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>Title</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border outline-none transition-colors focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                  style={{ borderColor: 'var(--border)' }}
+                  placeholder="Announcement title"
+                  maxLength={120}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>Message</label>
+                <textarea
+                  value={body}
+                  onChange={e => setBody(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border outline-none transition-colors resize-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                  style={{ borderColor: 'var(--border)' }}
+                  placeholder="Write your announcement..."
+                  rows={4}
+                  maxLength={1000}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-5 py-2.5 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 hover:opacity-90"
+                style={{ backgroundColor: 'var(--primary)' }}
+              >
+                {submitting ? 'Posting...' : 'Post Announcement'}
+              </button>
+            </form>
+          </>
+        )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Announcements</h2>
+      <div className="card card-body">
+        <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Announcements</h2>
         {announcements.length === 0 ? (
-          <p className="text-gray-500">No announcements yet.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>No announcements yet.</p>
         ) : (
           <div className="space-y-4">
             {announcements.map(a => (
-              <div key={a.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition">
+              <div
+                key={a.id}
+                className="rounded-lg p-4 transition-shadow hover:shadow-sm border"
+                style={{ borderColor: 'var(--border)' }}
+              >
                 <div className="flex items-center justify-between gap-4 mb-2">
-                  <h3 className="font-semibold text-gray-900">{a.title}</h3>
-                  <span className="text-xs text-gray-500">{new Date(a.created_at).toLocaleString()}</span>
+                  <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{a.title}</h3>
+                  <span className="text-xs shrink-0" style={{ color: 'var(--text-secondary)' }}>{new Date(a.created_at).toLocaleString()}</span>
                 </div>
-                <p className="text-gray-700 text-sm whitespace-pre-line">{a.body}</p>
-                <p className="text-xs text-gray-500 mt-3">Posted by {a.author_name}</p>
+                <p className="text-sm whitespace-pre-line" style={{ color: 'var(--text-secondary)' }}>{a.body}</p>
+                <p className="text-xs mt-3" style={{ color: 'var(--text-secondary)' }}>Posted by {capitalizeName(a.author_name)}</p>
               </div>
             ))}
           </div>

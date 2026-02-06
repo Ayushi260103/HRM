@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/hooks/useSupabase'
+import { capitalizeName } from '@/lib/utils/string'
 import Sidebar from '@/components/Sidebar'
+import LeavesNav from '@/components/LeavesNav'
 
 const DAYS = [
   { value: 0, label: 'Sun' },
@@ -19,8 +20,8 @@ const DAYS = [
 type UserRow = {
   id: string
   full_name: string | null
-  email_id: string | null
-  role: string | null
+  department: string | null
+  position: string | null
   weekend_days: number[]
 }
 
@@ -36,6 +37,7 @@ export default function AdminWeekendAllocationPage() {
   const [editDays, setEditDays] = useState<number[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [departmentFilter, setDepartmentFilter] = useState<string>('')
 
   useEffect(() => {
     const load = async () => {
@@ -62,7 +64,7 @@ export default function AdminWeekendAllocationPage() {
 
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name, email_id, role')
+        .select('id, full_name, department, position')
         .eq('status', 'active')
         .in('role', ['hr', 'employee'])
         .order('full_name', { ascending: true })
@@ -85,8 +87,8 @@ export default function AdminWeekendAllocationPage() {
       setUsers((profiles ?? []).map(p => ({
         id: p.id,
         full_name: p.full_name,
-        email_id: p.email_id,
-        role: p.role,
+        department: p.department ?? null,
+        position: p.position ?? null,
         weekend_days: map.get(p.id) ?? [],
       })))
       setLoading(false)
@@ -131,89 +133,116 @@ export default function AdminWeekendAllocationPage() {
     return days.map(d => DAYS.find(x => x.value === d)?.label ?? d).join(', ')
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    )
-  }
+  const departments = [...new Set(users.map(u => u.department).filter((d): d is string => !!d))].sort()
+  const filteredUsers = departmentFilter ? users.filter(u => u.department === departmentFilter) : users
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
-      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
+      <main className="admin-main">
         <div className="max-w-4xl">
-          <Link href="/dashboard/admin/leaves" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
-            ← Back to Leave Management
-          </Link>
+          <LeavesNav />
           <h1 className="text-2xl font-bold text-gray-900">Weekend Allocation</h1>
           <p className="text-gray-600 mt-1">Set which days of the week are off for HR and employees.</p>
 
+          {loading ? (
+            <div className="py-12 flex justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            </div>
+          ) : (
+            <>
           {error && (
             <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>
           )}
 
-          <div className="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Role</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Weekend days</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {users.map(u => (
-                  <tr key={u.id}>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{u.full_name ?? '—'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{u.email_id ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded ${u.role === 'hr' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {editingId === u.id ? (
-                        <div className="flex flex-wrap gap-2">
-                          {DAYS.map(d => (
-                            <label key={d.value} className="inline-flex items-center gap-1 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={editDays.includes(d.value)}
-                                onChange={() => toggleDay(d.value)}
-                                className="rounded border-gray-300"
-                              />
-                              <span className="text-xs">{d.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        formatDays(u.weekend_days)
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {editingId === u.id ? (
-                        <div className="flex justify-end gap-2">
-                          <button type="button" onClick={() => setEditingId(null)} className="text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-                          <button type="button" onClick={save} disabled={saving} className="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50">
-                            {saving ? 'Saving...' : 'Save'}
-                          </button>
-                        </div>
-                      ) : (
-                        <button type="button" onClick={() => startEdit(u)} className="text-sm text-blue-600 hover:text-blue-700 font-medium">Edit</button>
-                      )}
-                    </td>
-                  </tr>
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <span className="font-medium">Filter by department:</span>
+              <select
+                value={departmentFilter}
+                onChange={e => setDepartmentFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">All departments</option>
+                {departments.map(d => (
+                  <option key={d} value={d}>{d}</option>
                 ))}
-              </tbody>
-            </table>
-            {users.length === 0 && (
-              <div className="p-8 text-center text-gray-500 text-sm">No HR or employees found.</div>
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-4 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight">
+                      Name
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight">
+                      Department
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight">
+                      Designation
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight">
+                      Weekend days
+                    </th>
+                    <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-tight w-16">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredUsers.map(u => (
+                    <tr key={u.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 text-xs font-medium text-gray-900">{capitalizeName(u.full_name) ?? '—'}</td>
+                      <td className="px-3 py-2 text-xs text-gray-600">{u.department ?? '—'}</td>
+                      <td className="px-3 py-2 text-xs text-gray-600">{u.position ?? '—'}</td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {editingId === u.id ? (
+                          <div className="flex flex-wrap gap-2">
+                            {DAYS.map(d => (
+                              <label key={d.value} className="inline-flex items-center gap-1 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={editDays.includes(d.value)}
+                                  onChange={() => toggleDay(d.value)}
+                                  className="rounded border-gray-300"
+                                />
+                                <span className="text-xs">{d.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          formatDays(u.weekend_days)
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right w-16">
+                        {editingId === u.id ? (
+                          <div className="flex justify-end gap-1.5 flex-wrap">
+                            <button type="button" onClick={() => setEditingId(null)} className="text-gray-500 hover:text-gray-700 text-xs">Cancel</button>
+                            <button type="button" onClick={save} disabled={saving} className="text-blue-600 hover:text-blue-700 text-xs font-medium disabled:opacity-50">
+                              {saving ? 'Saving...' : 'Save'}
+                            </button>
+                          </div>
+                        ) : (
+                          <button type="button" onClick={() => startEdit(u)} className="text-blue-600 hover:text-blue-700 text-xs font-medium">Edit</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {filteredUsers.length === 0 && (
+              <div className="p-6 text-center text-gray-500 text-sm">
+                {users.length === 0 ? 'No HR or employees found.' : 'No employees in this department.'}
+              </div>
             )}
           </div>
+            </>
+          )}
         </div>
       </main>
     </div>

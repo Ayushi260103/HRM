@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import Notifications from '@/components/Notifications'
+import UpcomingBirthdays, { useUpcomingBirthdays } from '@/components/UpcomingBirthdays'
 import { useSupabase } from '@/hooks/useSupabase'
 
 type UserState = { email: string | null; userName: string | null; avatarUrl: string | null; userId: string | null }
@@ -14,6 +15,7 @@ export default function AdminMomentsPage() {
   const supabase = useSupabase()
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<UserState>({ email: null, userName: null, avatarUrl: null, userId: null })
+  const { birthdays, loading: loadingBirthdays } = useUpcomingBirthdays(supabase)
 
   useEffect(() => {
     let cancelled = false
@@ -63,48 +65,23 @@ export default function AdminMomentsPage() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Sidebar userEmail={user.email} userName={user.userName} avatarUrl={user.avatarUrl} role="admin" />
 
-      <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-8">
+      <div className="admin-notifications-fixed">
         {user.userId && <Notifications role="admin" userId={user.userId} />}
       </div>
 
-      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
+      <main className="admin-main">
         <div className="w-full max-w-4xl mx-auto">
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">Moments That Matter</h1>
-            <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Celebrate birthdays and stay informed about office holidays</p>
+          <div className="mb-6 flex justify-end">
+            <Link
+              href="/dashboard/admin/moments/office-holidays"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:border-slate-300"
+            >
+              
+              View upcoming holidays
+            </Link>
           </div>
 
-          <Link
-            href="/dashboard/admin/moments/office-holidays"
-            className="mb-6 block"
-          >
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all">
-              <div className="flex items-center gap-4">
-                <span className="text-3xl">📅</span>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">Office Holidays</h3>
-                  <p className="text-sm text-gray-600 mt-1">View dates when the office is closed</p>
-                </div>
-                <span className="ml-auto text-gray-400">→</span>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            href="/dashboard/admin/upcoming-birthdays"
-            className="block"
-          >
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all">
-              <div className="flex items-center gap-4">
-                <span className="text-3xl">🎂</span>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">Upcoming Birthdays</h3>
-                  <p className="text-sm text-gray-600 mt-1">Birthdays in the next 30 days</p>
-                </div>
-                <span className="ml-auto text-gray-400">→</span>
-              </div>
-            </div>
-          </Link>
+          <UpcomingBirthdays birthdays={birthdays} loading={loadingBirthdays} />
         </div>
       </main>
     </div>

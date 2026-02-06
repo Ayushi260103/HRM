@@ -1,26 +1,130 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import Notifications from '@/components/Notifications'
 import { useSupabase } from '@/hooks/useSupabase'
-import { getLocalDateString, getDateString } from '@/lib/utils/date'
+import { getDateString } from '@/lib/utils/date'
 
 type Holiday = { id: string; date: string; name: string }
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+function getCalendarDays(year: number, month: number): { date: Date; dateStr: string; isCurrentMonth: boolean }[] {
+  const first = new Date(year, month, 1)
+  const last = new Date(year, month + 1, 0)
+  const firstDay = first.getDay()
+  const daysInMonth = last.getDate()
+
+  const result: { date: Date; dateStr: string; isCurrentMonth: boolean }[] = []
+
+  // Leading empty / prev month
+  const prevMonth = month === 0 ? 11 : month - 1
+  const prevYear = month === 0 ? year - 1 : year
+  const prevLast = new Date(prevYear, prevMonth + 1, 0).getDate()
+  for (let i = 0; i < firstDay; i++) {
+    const d = prevLast - firstDay + 1 + i
+    const date = new Date(prevYear, prevMonth, d)
+    result.push({ date, dateStr: getDateString(date), isCurrentMonth: false })
+  }
+
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d)
+    result.push({ date, dateStr: getDateString(date), isCurrentMonth: true })
+  }
+
+  // Trailing next month to fill 6 rows (42 cells)
+  const total = result.length
+  const remaining = 42 - total
+  for (let i = 0; i < remaining; i++) {
+    const date = new Date(year, month + 1, i + 1)
+    result.push({ date, dateStr: getDateString(date), isCurrentMonth: false })
+  }
+
+  return result
+}
+
+function MonthCalendar({
+  year,
+  month,
+  holidaysByDate,
+  selectedDate,
+  onSelectDate,
+}: {
+  year: number
+  month: number
+  holidaysByDate: Map<string, string[]>
+  selectedDate: string | null
+  onSelectDate: (dateStr: string) => void
+}) {
+  const days = useMemo(() => getCalendarDays(year, month), [year, month])
+  const monthLabel = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const selectedHolidays = selectedDate ? holidaysByDate.get(selectedDate) : null
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+      <h3 className="text-center font-semibold text-slate-900 mb-3">{monthLabel}</h3>
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {WEEKDAYS.map((w) => (
+          <div key={w} className="text-xs font-medium text-slate-500 py-1">
+            {w}
+          </div>
+        ))}
+        {days.map(({ date, dateStr, isCurrentMonth }) => {
+          const holidayNames = holidaysByDate.get(dateStr)
+          const isHoliday = !!holidayNames?.length
+          const isSelected = selectedDate === dateStr
+          return (
+            <button
+              key={dateStr}
+              type="button"
+              onClick={() => onSelectDate(dateStr)}
+              className={`
+                min-h-[36px] rounded-md text-sm transition-colors
+                ${!isCurrentMonth ? 'text-slate-300' : 'text-slate-900'}
+                ${isHoliday ? 'bg-amber-100 hover:bg-amber-200 font-medium' : 'hover:bg-slate-100'}
+                ${isSelected ? 'ring-2 ring-indigo-500 ring-offset-1' : ''}
+              `}
+            >
+              {date.getDate()}
+            </button>
+          )
+        })}
+      </div>
+      {selectedHolidays && selectedHolidays.length > 0 && (
+        <p className="mt-3 text-center text-sm font-medium text-amber-800">
+          {selectedHolidays.join(', ')}
+        </p>
+      )}
+    </div>
+  )
+}
 
 export default function AdminOfficeHolidaysPage() {
   const router = useRouter()
   const supabase = useSupabase()
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedByMonth, setSelectedByMonth] = useState<Record<number, string | null>>({ 0: null, 1: null, 2: null, 3: null })
   const [user, setUser] = useState<{ email: string | null; userName: string | null; avatarUrl: string | null; userId: string | null }>({
     email: null,
     userName: null,
     avatarUrl: null,
     userId: null,
   })
+
+  const holidaysByDate = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const h of holidays) {
+      const existing = map.get(h.date) ?? []
+      existing.push(h.name)
+      map.set(h.date, existing)
+    }
+    return map
+  }, [holidays])
 
   useEffect(() => {
     let cancelled = false
@@ -53,8 +157,8 @@ export default function AdminOfficeHolidaysPage() {
       })
 
       const today = new Date()
-      const startDate = getLocalDateString()
-      const endDate = getDateString(new Date(today.getFullYear(), today.getMonth() + 3, today.getDate()))
+      const startDate = getDateString(new Date(today.getFullYear(), today.getMonth(), 1))
+      const endDate = getDateString(new Date(today.getFullYear(), today.getMonth() + 4, 0))
 
       const { data } = await supabase
         .from('office_holidays')
@@ -79,54 +183,51 @@ export default function AdminOfficeHolidaysPage() {
     )
   }
 
+  const today = new Date()
+  const months: { year: number; month: number }[] = []
+  for (let i = 0; i < 4; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1)
+    months.push({ year: d.getFullYear(), month: d.getMonth() })
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Sidebar userEmail={user.email} userName={user.userName} avatarUrl={user.avatarUrl} role="admin" />
 
-      <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-8">
+      <div className="admin-notifications-fixed">
         {user.userId && <Notifications role="admin" userId={user.userId} />}
       </div>
 
-      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
+      <main className="admin-main">
         <div className="max-w-4xl">
-          <Link href="/dashboard/admin/moments" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
-            ← Back to Moments That Matter
-          </Link>
-          <Link href="/dashboard/admin/leaves/holiday-allocation" className="ml-4 text-sm text-gray-600 hover:underline">
-            Manage holidays
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-2">Office Holidays</h1>
-          <p className="text-gray-600 mt-1 text-sm">Dates when the office is closed (within the next 3 months)</p>
-
-          <div className="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Name</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {holidays.map(h => (
-                    <tr key={h.id}>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        {new Date(h.date).toLocaleDateString('en-IN', {
-                          weekday: 'short',
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{h.name}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Upcoming Holidays</h1>
             </div>
-            {holidays.length === 0 && (
-              <div className="p-8 text-center text-gray-500 text-sm">No office holidays scheduled</div>
-            )}
+            <Link
+              href="/dashboard/admin/moments"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:border-slate-300 shrink-0"
+            >
+              View upcoming birthday
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {months.map(({ year, month }, index) => (
+              <MonthCalendar
+                key={`${year}-${month}`}
+                year={year}
+                month={month}
+                holidaysByDate={holidaysByDate}
+                selectedDate={selectedByMonth[index] ?? null}
+                onSelectDate={(dateStr) =>
+                  setSelectedByMonth((prev) => ({
+                    ...prev,
+                    [index]: prev[index] === dateStr ? null : dateStr,
+                  }))
+                }
+              />
+            ))}
           </div>
         </div>
       </main>

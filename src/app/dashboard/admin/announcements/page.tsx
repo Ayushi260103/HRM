@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/hooks/useSupabase'
 import Sidebar from '@/components/Sidebar'
+import PageHeader from '@/components/PageHeader'
 import AnnouncementsPanel from '@/components/AnnouncementsPanel'
 
 export default function AdminAnnouncementsPage() {
@@ -48,19 +49,16 @@ export default function AdminAnnouncementsPage() {
     loadData()
   }, [router, supabase])
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading announcements...</p></div>
-  if (!userId || !role) return <div className="p-8">Redirecting...</div>
+  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}><p style={{ color: 'var(--text-secondary)' }}>Loading announcements...</p></div>
+  if (!userId || !role) return <div className="p-6" style={{ color: 'var(--text-secondary)' }}>Redirecting...</div>
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
-      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
+      <main className="admin-main">
         <div className="w-full max-w-4xl">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
-            <p className="text-gray-600 mt-2">Post updates for everyone and view all announcements</p>
-          </div>
+          <PageHeader title="Announcements" subtitle="Post updates for everyone and view all announcements" />
 
           <AnnouncementsPanel userId={userId} userName={userName || email || 'User'} userRole={role} />
         </div>

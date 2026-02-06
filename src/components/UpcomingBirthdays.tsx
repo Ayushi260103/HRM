@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { capitalizeName } from '@/lib/utils/string'
 
 export interface BirthdayProfile {
   id: string
@@ -71,29 +72,33 @@ export function useUpcomingBirthdays(supabase: ReturnType<typeof import('@/lib/s
 function BirthdayCard({ person, isTodayBirthday }: { person: BirthdayProfile; isTodayBirthday?: boolean }) {
   return (
     <div
-      className={`rounded-xl p-4 sm:p-5 hover:shadow-md transition-shadow flex items-center gap-4 ${
+      className={`aspect-square rounded-xl overflow-hidden transition-all duration-200 flex flex-col items-center justify-start p-4 ${
         isTodayBirthday
-          ? 'bg-gradient-to-r from-pink-50 to-rose-50 border-2 border-pink-200 shadow-sm'
-          : 'bg-white border border-gray-200'
+          ? 'bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/80 shadow-md shadow-rose-100/50'
+          : 'bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'
       }`}
     >
-      {person.avatar_url ? (
-        <Image
-          src={person.avatar_url}
-          alt={person.full_name}
-          width={56}
-          height={56}
-          className="w-14 h-14 rounded-full object-cover flex-shrink-0"
-        />
-      ) : (
-        <div className="w-14 h-14 rounded-full bg-pink-100 flex items-center justify-center text-lg font-semibold text-pink-600 flex-shrink-0">
-          {person.full_name?.[0]?.toUpperCase()}
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{person.full_name}</p>
-        <p className="text-xs text-gray-500 truncate">{person.department} · {person.position}</p>
-        <p className={`text-sm font-medium mt-1 ${isTodayBirthday ? 'text-pink-600' : 'text-pink-600'}`}>
+      <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${isTodayBirthday ? 'text-rose-600' : 'text-slate-500'}`}>
+        {isTodayBirthday ? 'Happy birthday' : 'Birthday soon'}
+      </p>
+      <div className="flex-1 flex flex-col items-center justify-center min-h-0 w-full">
+        {person.avatar_url ? (
+          <Image
+            src={person.avatar_url}
+            alt={person.full_name}
+            width={80}
+            height={80}
+            className="w-20 h-20 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-md"
+          />
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center text-2xl font-semibold text-rose-600 flex-shrink-0 ring-2 ring-white shadow-md">
+            {person.full_name?.[0]?.toUpperCase()}
+          </div>
+        )}
+        <p className="font-semibold text-slate-900 text-sm mt-3 truncate w-full text-center">{capitalizeName(person.full_name)}</p>
+        <p className="text-xs text-slate-500 mt-0.5 truncate w-full text-center">{person.position || '—'}</p>
+        <p className="text-xs text-slate-500 mt-0.5 truncate w-full text-center">{person.department || '—'}</p>
+        <p className={`text-xs font-medium mt-2 ${isTodayBirthday ? 'text-rose-600' : 'text-slate-600'}`}>
           🎂 {person.upcomingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </p>
       </div>
@@ -108,17 +113,17 @@ export default function UpcomingBirthdays({ birthdays, loading }: { birthdays: B
   if (loading) {
     return (
       <div className="min-h-[200px] flex items-center justify-center">
-        <p className="text-gray-600 text-sm sm:text-base">Loading upcoming birthdays...</p>
+        <p className="text-slate-500 text-sm sm:text-base">Loading upcoming birthdays...</p>
       </div>
     )
   }
 
   if (birthdays.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
-        <div className="text-4xl sm:text-5xl mb-3">🎂</div>
-        <p className="text-gray-600 text-base sm:text-lg">No upcoming birthdays</p>
-        <p className="text-gray-500 text-xs sm:text-sm mt-1">No birthdays in the next 30 days</p>
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-10 sm:p-14 text-center">
+        <div className="text-5xl mb-4">🎂</div>
+        <p className="text-slate-700 font-medium text-lg">No upcoming birthdays</p>
+        <p className="text-slate-500 text-sm mt-1">No birthdays in the next 30 days</p>
       </div>
     )
   }
@@ -127,10 +132,10 @@ export default function UpcomingBirthdays({ birthdays, loading }: { birthdays: B
     <div className="space-y-8">
       {todayBirthdays.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-            <span>🎉</span> Birthday Today
+          <h2 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+            Birthday Today
           </h2>
-          <p className="text-gray-600 text-sm mb-4">Wish them a wonderful day!</p>
+          <p className="text-slate-500 text-sm mb-4">Wish them a wonderful day!</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {todayBirthdays.map((person) => (
               <BirthdayCard key={person.id} person={person} isTodayBirthday />
@@ -141,10 +146,10 @@ export default function UpcomingBirthdays({ birthdays, loading }: { birthdays: B
 
       {upcomingBirthdays.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-            <span>📅</span> Upcoming Birthdays
+          <h2 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+            Upcoming Birthdays
           </h2>
-          <p className="text-gray-600 text-sm mb-4">Birthdays in the next 30 days</p>
+          <p className="text-slate-500 text-sm mb-4">Birthdays in the next 30 days</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {upcomingBirthdays.map((person) => (
               <BirthdayCard key={person.id} person={person} />

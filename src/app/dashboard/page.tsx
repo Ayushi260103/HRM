@@ -44,7 +44,7 @@ export default function DashboardPage() {
       }
       if (profile.role === 'admin') {
         
-        router.replace('/dashboard/admin')
+        router.replace('/dashboard/admin/home')
         return
       }
       if (profile.role === 'hr') {
@@ -86,7 +86,7 @@ export default function DashboardPage() {
 
           <div className="grid gap-6 md:grid-cols-2">
             {role === 'admin' && (
-              <Link href="/dashboard/admin" className="block group">
+              <Link href="/dashboard/admin/home" className="block group">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
                   <div className="text-3xl mb-3">⚙️</div>
                   <h3 className="font-semibold text-gray-900 text-lg group-hover:text-blue-600 transition">Admin Panel</h3>

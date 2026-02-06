@@ -19,6 +19,10 @@ interface FormData {
   dob: string;
   avatar_url: string;
   years_of_experience: number;
+  gender: string;
+  marital_status: string;
+  address: string;
+  education: string;
 }
 
 export default function ProfileCompletionPage() {
@@ -32,6 +36,10 @@ export default function ProfileCompletionPage() {
     dob: '',
     avatar_url: '',
     years_of_experience: 0,
+    gender: '',
+    marital_status: '',
+    address: '',
+    education: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +75,10 @@ export default function ProfileCompletionPage() {
             dob: data.dob || '',
             avatar_url: data.avatar_url || '',
             years_of_experience: data.years_of_experience || 0,
+            gender: data.gender || '',
+            marital_status: data.marital_status || '',
+            address: data.address || '',
+            education: data.education || '',
           }));
           if (data.avatar_url) setPreviewUrl(data.avatar_url);
         }
@@ -139,7 +151,7 @@ export default function ProfileCompletionPage() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -187,6 +199,10 @@ export default function ProfileCompletionPage() {
           dob: formData.dob,
           avatar_url: formData.avatar_url,
           years_of_experience: formData.years_of_experience,
+          gender: formData.gender || null,
+          marital_status: formData.marital_status || null,
+          address: formData.address || null,
+          education: formData.education || null,
         })
         .eq('id', user.id);
 
@@ -213,7 +229,7 @@ export default function ProfileCompletionPage() {
       } else if(profile.role === 'hr'){
         router.push('/dashboard/hr');
       } else {
-        router.push('/dashboard/admin');
+        router.push('/dashboard/admin/home');
       }
 
     } catch (err) {
@@ -378,6 +394,62 @@ export default function ProfileCompletionPage() {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
                 required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Gender
+              </label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">Select</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Marital status
+              </label>
+              <select
+                name="marital_status"
+                value={formData.marital_status}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">Select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Address
+              </label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Highest education
+              </label>
+              <textarea
+                name="education"
+                value={formData.education}
+                onChange={handleChange}
+                placeholder="Enter your highest education"
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none resize-y"
               />
             </div>
           </div>

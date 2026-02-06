@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/hooks/useSupabase'
+import { capitalizeName } from '@/lib/utils/string'
 import Sidebar from '@/components/Sidebar'
+import PageHeader from '@/components/PageHeader'
+import Notifications from '@/components/Notifications'
 
 type PendingUser = {
   id: string
@@ -20,6 +23,7 @@ export default function PendingRequestsPage() {
   const [email, setEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const supabase = useSupabase()
@@ -34,6 +38,7 @@ export default function PendingRequestsPage() {
       }
 
       setEmail(user.email ?? null)
+      setUserId(user.id)
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -42,7 +47,7 @@ export default function PendingRequestsPage() {
         .single()
 
       if (profile?.role !== 'admin') {
-        router.replace('/dashboard')
+        router.replace('/dashboard/admin/home')
         return
       }
 
@@ -109,18 +114,25 @@ export default function PendingRequestsPage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading requests...</p></div>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading" style={{ background: 'var(--background)' }}>
+        <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>Loading requests...</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
-      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
-        <div className="w-full max-w-4xl">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Pending Requests</h1>
-            <p className="text-gray-600 mt-2">Review and approve pending user registrations</p>
-          </div>
+      <div className="admin-notifications-fixed">
+        {userId && <Notifications role="admin" userId={userId} />}
+      </div>
+
+      <main className="admin-main">
+        <div className="w-full max-w-4xl mx-auto">
+          <PageHeader title="Pending Requests" subtitle="Review and approve pending user registrations" />
 
           {actionMessage && (
             <div
@@ -135,25 +147,24 @@ export default function PendingRequestsPage() {
           )}
 
           {users.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-              <div className="text-5xl mb-3">🎉</div>
-              <p className="text-gray-600 text-lg">All caught up!</p>
-              <p className="text-gray-500 text-sm mt-2">No pending approvals at the moment</p>
+            <div className="card card-body rounded-xl p-12 text-center" style={{ borderColor: 'var(--border)' }}>
+              <p className="text-lg" style={{ color: 'var(--text-primary)' }}>All caught up!</p>
+              <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>No pending approvals at the moment</p>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-blue-900 font-semibold">📊 {users.length} {users.length === 1 ? 'request' : 'requests'} awaiting approval</p>
+              <div className="rounded-lg p-4 border" style={{ backgroundColor: 'var(--primary-light)', borderColor: 'var(--primary)' }}>
+                <p className="font-semibold" style={{ color: 'var(--primary)' }}>{users.length} {users.length === 1 ? 'request' : 'requests'} awaiting approval</p>
               </div>
 
               {users.map(user => (
-                <div key={user.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div key={user.id} className="card card-body rounded-xl p-6 hover:shadow-md transition-shadow" style={{ borderColor: 'var(--border)' }}>
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                      <p className="font-semibold text-gray-900 text-lg">{user.full_name || 'No name provided'}</p>
-                      <p className="font-semibold text-gray-600 text-sm">{user.email_id || 'No email provided'}</p>
-                      <p className="text-sm text-gray-500 mt-1">ID: {user.id.substring(0, 8)}...</p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>{capitalizeName(user.full_name) || 'No name provided'}</p>
+                      <p className="font-semibold text-sm" style={{ color: 'var(--text-secondary)' }}>{user.email_id || 'No email provided'}</p>
+                      <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>ID: {user.id.substring(0, 8)}...</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                         Applied: {new Date(user.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -162,7 +173,8 @@ export default function PendingRequestsPage() {
                       <select
                         defaultValue="employee"
                         id={`role-${user.id}`}
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="rounded-lg px-3 py-2 text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
                       >
                         <option value="employee">Employee</option>
                         <option value="hr">HR</option>
@@ -174,16 +186,17 @@ export default function PendingRequestsPage() {
                           const role = (document.getElementById(`role-${user.id}`) as HTMLSelectElement).value
                           approveUser(user.id, role)
                         }}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors"
+                        className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors hover:opacity-90"
+                        style={{ backgroundColor: 'var(--primary)' }}
                       >
-                        ✅ Approve
+                        Approve
                       </button>
 
                       <button
                         onClick={() => rejectUser(user.id)}
                         className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
                       >
-                        ❌ Reject
+                        Reject
                       </button>
                     </div>
                   </div>

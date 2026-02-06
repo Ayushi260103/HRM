@@ -1,22 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F8FAFC;
+  --foreground: #111827;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --border: #E5E7EB;
+  --card-bg: #ffffff;
+  --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --primary: #4F46E5;
+  --primary-hover: #4338CA;
+  --primary-light: #EEF2FF;
+  /* Status: Approved/Present = green, Pending = amber, Rejected = red, Leave/Info = purple/blue */
+  --status-approved-bg: #ECFDF5;
+  --status-approved-text: #059669;
+  --status-approved-border: #A7F3D0;
+  --status-pending-bg: #FFFBEB;
+  --status-pending-text: #D97706;
+  --status-pending-border: #FDE68A;
+  --status-rejected-bg: #FEF2F2;
+  --status-rejected-text: #DC2626;
+  --status-rejected-border: #FECACA;
+  --status-info-bg: #EEF2FF;
+  --status-info-text: #4F46E5;
+  --status-info-border: #C7D2FE;
+  --spacing-1: 8px;
+  --spacing-2: 16px;
+  --spacing-3: 24px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 html {
@@ -27,11 +43,184 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   overflow-x: hidden;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* SaaS dashboard utilities */
+.dashboard-page {
+  padding: var(--spacing-3);
+}
+
+/* Admin dashboard main content: responsive padding and sidebar offset */
+.admin-main {
+  flex: 1 1 0%;
+  min-width: 0;
+  padding-top: max(3.5rem, calc(env(safe-area-inset-top, 0px) + 2rem));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  padding-left: max(3.5rem, calc(env(safe-area-inset-left, 0px) + 2.5rem));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 640px) {
+  .admin-main {
+    padding-top: 1.5rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+}
+@media (min-width: 768px) {
+  .admin-main {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .admin-main {
+    margin-left: 16rem;
+    padding-top: 2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
+/* Fixed notifications position with safe-area for notched devices */
+.admin-notifications-fixed {
+  position: fixed;
+  z-index: 50;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+}
+@media (min-width: 1024px) {
+  .admin-notifications-fixed {
+    top: 1.5rem;
+    right: 2rem;
+  }
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.page-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+@media (min-width: 640px) {
+  .page-title {
+    font-size: 1.5rem;
+  }
+}
+
+.page-subtitle {
+  margin-top: 4px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+}
+
+.card-body {
+  padding: var(--spacing-3);
+}
+
+/* Status badges: Approved/Present = green, Pending = amber, Rejected = red, Leave/Info = purple/blue */
+.badge-approved,
+.badge-present {
+  background: var(--status-approved-bg);
+  color: var(--status-approved-text);
+  border: 1px solid var(--status-approved-border);
+}
+
+.badge-pending {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
+  border: 1px solid var(--status-pending-border);
+}
+
+.badge-rejected {
+  background: var(--status-rejected-bg);
+  color: var(--status-rejected-text);
+  border: 1px solid var(--status-rejected-border);
+}
+
+.badge-leave,
+.badge-info {
+  background: var(--status-info-bg);
+  color: var(--status-info-text);
+  border: 1px solid var(--status-info-border);
+}
+
+.badge-common {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Leave management tab transition: enter from right when going to a tab on the right */
+.leave-tab-enter-right {
+  animation: leave-tab-slide-from-right 0.25s ease-out forwards;
+}
+
+.leave-tab-enter-left {
+  animation: leave-tab-slide-from-left 0.25s ease-out forwards;
+}
+
+@keyframes leave-tab-slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes leave-tab-slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Responsive tables: horizontal scroll on small screens */
+.admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Responsive touch targets and scroll */

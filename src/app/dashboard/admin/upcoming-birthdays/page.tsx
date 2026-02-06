@@ -65,11 +65,11 @@ export default function AdminUpcomingBirthdaysPage() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Sidebar userEmail={user.email} userName={user.userName} avatarUrl={user.avatarUrl} role="admin" />
 
-      <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-8">
+      <div className="admin-notifications-fixed">
         {user.userId && <Notifications role="admin" userId={user.userId} />}
       </div>
 
-      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
+      <main className="admin-main">
         <div className="w-full max-w-4xl mx-auto">
           <div className="mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">Upcoming Birthdays</h1>
