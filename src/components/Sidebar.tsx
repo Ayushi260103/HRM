@@ -77,9 +77,10 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
       >
         <div className="flex flex-col h-full">
           {/* Logo/Brand */}
-          <div className="px-5 py-6 border-b" style={{ borderColor: 'var(--border)' }}>
-            <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>HRM</h1>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Human Resource Management</p>
+          <div className="py-5 px-3 border-b" style={{ borderColor: 'var(--border)' }}>
+            {/* <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>HRM</h1>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Human Resource Management</p> */}
+            <img src="/image/logo.png" alt="HRM" className="w-full h-full object-contain" />
           </div>
 
           {/* Navigation */}

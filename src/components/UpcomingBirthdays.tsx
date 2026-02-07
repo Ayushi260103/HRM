@@ -7,14 +7,14 @@ import { capitalizeName } from '@/lib/utils/string'
 export interface BirthdayProfile {
   id: string
   full_name: string
-  department: string
+  // department: string
   job_title: string
   dob: string
   avatar_url?: string
   upcomingDate: Date
 }
 
-function getBirthdaysInNext30Days(profiles: { id: string; full_name: string; department: string; job_title: string; dob: string; avatar_url?: string }[]): BirthdayProfile[] {
+function getBirthdaysInNext30Days(profiles: { id: string; full_name: string; job_title: string; dob: string; avatar_url?: string }[]): BirthdayProfile[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const in30Days = new Date(today)
@@ -78,7 +78,7 @@ function BirthdayCard({ person, isTodayBirthday, variant }: { person: BirthdayPr
           : 'bg-[var(--primary-hover)] border-[var(--primary)]'
       }`}
     >
-      <div className="mb-2 text-white/80">
+      <div className="mb-0 text-white/80">
         {isTodayBirthday ? (
           <svg className="birthday-arc" viewBox="0 0 160 70" aria-label="Happy Birthday">
             <defs>
@@ -114,7 +114,7 @@ function BirthdayCard({ person, isTodayBirthday, variant }: { person: BirthdayPr
             alt={person.full_name}
             width={80}
             height={80}
-            className="w-20 h-20 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-md"
+            className="w-30 h-30 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-md"
           />
         ) : (
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-sky-200 to-blue-200 flex items-center justify-center text-2xl font-semibold text-blue-700 flex-shrink-0 ring-2 ring-white shadow-md">
@@ -123,7 +123,7 @@ function BirthdayCard({ person, isTodayBirthday, variant }: { person: BirthdayPr
         )}
         <p className="font-semibold text-white text-base mt-2.5 truncate w-full text-center">{capitalizeName(person.full_name)}</p>
         <p className="text-sm text-white/80 mt-0.5 truncate w-full text-center">{person.job_title || '--'}</p>
-        <p className="text-sm text-white/80 mt-0.5 truncate w-full text-center">{person.department || '--'}</p>
+        {/* <p className="text-sm text-white/80 mt-0.5 truncate w-full text-center">{person.department || '--'}</p> */}
         <p className="text-sm font-medium mt-2 text-white/80">
           {person.upcomingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </p>
