@@ -8,7 +8,7 @@ export interface BirthdayProfile {
   id: string
   full_name: string
   department: string
-  position: string
+  job_title: string
   dob: string
   avatar_url?: string
   upcomingDate: Date
@@ -31,7 +31,7 @@ function getBirthdaysInNext30Days(profiles: { id: string; full_name: string; dep
       nextBday = new Date(today.getFullYear() + 1, dob.getMonth(), dob.getDate())
     }
     if (nextBday >= today && nextBday <= in30Days) {
-      result.push({ ...p, upcomingDate: nextBday })
+      result.push({ ...p, upcomingDate: nextBday, job_title: p.position })
     }
   }
 
@@ -122,7 +122,7 @@ function BirthdayCard({ person, isTodayBirthday, variant }: { person: BirthdayPr
           </div>
         )}
         <p className="font-semibold text-white text-base mt-2.5 truncate w-full text-center">{capitalizeName(person.full_name)}</p>
-        <p className="text-sm text-white/80 mt-0.5 truncate w-full text-center">{person.position || '--'}</p>
+        <p className="text-sm text-white/80 mt-0.5 truncate w-full text-center">{person.job_title || '--'}</p>
         <p className="text-sm text-white/80 mt-0.5 truncate w-full text-center">{person.department || '--'}</p>
         <p className="text-sm font-medium mt-2 text-white/80">
           {person.upcomingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
