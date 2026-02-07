@@ -70,17 +70,20 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
     <>
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-40 h-screen w-64 max-w-[85vw] bg-white border-r transition-transform duration-300 ease-out ${
+        className={` bg-[url('/image/bg.png')]
+  bg-cover bg-center bg-no-repeat fixed left-0 top-0 z-40 h-screen w-64 max-w-[85vw] bg-white border-r transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 overflow-y-auto`}
         style={{ borderColor: 'var(--border)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)' }}
       >
-        <div className="flex flex-col h-full">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/70 to-white/90" />
+
+        <div className="relative z-10 flex flex-col h-full">
           {/* Logo/Brand */}
           <div className="py-5 px-3 border-b" style={{ borderColor: 'var(--border)' }}>
             {/* <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>HRM</h1>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Human Resource Management</p> */}
-            <img src="/image/logo.png" alt="HRM" className="w-full h-full object-contain" />
+            <Image src="/image/logobg.png" alt="HRM" className="w-full h-full object-contain" width={150} height={150} />
           </div>
 
           {/* Navigation */}

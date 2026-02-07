@@ -68,69 +68,142 @@ export function useUpcomingBirthdays(supabase: ReturnType<typeof import('@/lib/s
 
   return { birthdays, loading }
 }
+const CONFETTI_BG =
+  "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.6) 2px, transparent 3px),\
+   radial-gradient(circle at 70% 40%, rgba(255,255,255,0.6) 2px, transparent 3px),\
+   radial-gradient(circle at 40% 80%, rgba(255,255,255,0.6) 2px, transparent 3px)";
 
-function BirthdayCard({ person, isTodayBirthday, variant }: { person: BirthdayProfile; isTodayBirthday?: boolean; variant: 'odd' | 'even' }) {
-  return (
-    <div
-      className={`aspect-square rounded-full overflow-hidden transition-all duration-200 flex flex-col items-center justify-start p-3 border shadow-md hover:shadow-lg ${
-        variant === 'odd'
-          ? 'bg-[var(--primary-hover)] border-[var(--primary)]'
-          : 'bg-[var(--primary-hover)] border-[var(--primary)]'
-      }`}
-    >
-      <div className="mb-0 text-white/80">
-        {isTodayBirthday ? (
-          <svg className="birthday-arc" viewBox="0 0 160 70" aria-label="Happy Birthday">
-            <defs>
-              <path id="arc-top" d="M10,46 Q80,6 150,46" />
-              <path id="arc-bottom" d="M10,62 Q80,22 150,62" />
-            </defs>
-            <text dy="-2">
-              <textPath href="#arc-top" startOffset="50%" textAnchor="middle">Happy</textPath>
-            </text>
-            <text dy="2">
-              <textPath href="#arc-bottom" startOffset="50%" textAnchor="middle">Birthday</textPath>
-            </text>
-          </svg>
-        ) : (
-          <svg className="birthday-arc" viewBox="0 0 160 70" aria-label="Birthday Soon">
-            <defs>
-              <path id="arc-top-soon" d="M10,46 Q80,6 150,46" />
-              <path id="arc-bottom-soon" d="M10,62 Q80,22 150,62" />
-            </defs>
-            <text dy="-2">
-              <textPath href="#arc-top-soon" startOffset="50%" textAnchor="middle">Birthday</textPath>
-            </text>
-            <text dy="2">
-              <textPath href="#arc-bottom-soon" startOffset="50%" textAnchor="middle">Soon</textPath>
-            </text>
-          </svg>
-        )}
+   function BirthdayCard({
+    person,
+    isTodayBirthday,
+  }: {
+    person: BirthdayProfile
+    isTodayBirthday?: boolean
+  }) {
+    const isToday = !!isTodayBirthday
+  
+    return (
+      <div
+        className={`
+          relative flex flex-col items-center justify-center
+          transition-all duration-300
+          shadow-lg hover:shadow-xl
+  
+          ${
+            isToday
+              ? 'rounded-2xl aspect-[4/3] p-6'
+              : 'rounded-full aspect-square p-6'
+          }
+        `}
+        style={
+          isToday
+            ? {
+                backgroundImage: `
+                  ${CONFETTI_BG},
+                  linear-gradient(135deg, #1e40af, #2563eb)
+                `,
+              }
+            : {
+                backgroundImage:
+                  'linear-gradient(135deg, #93c5fd, #60a5fa)',
+              }
+        }
+        
+      >
+        {/* Decorative border ring */}
+        <div
+          className={`
+            absolute inset-1
+            pointer-events-none
+            ${
+              isToday ? 'rounded-xl' : 'rounded-full'
+            }
+            border border-white/30
+          `}
+        />
+  
+        {/* Header text */}
+        <div className="mb-2">
+          <p
+            className={`
+              text-sm font-semibold tracking-wide
+              ${
+                isToday
+                  ? 'text-white'
+                  : 'text-slate-800'
+              }
+            `}
+          >
+            {isToday ? '🎉 Happy Birthday!' : 'Birthday Soon'}
+          </p>
+        </div>
+  
+        {/* Avatar */}
+        <div className="relative">
+          {person.avatar_url ? (
+            <Image
+              src={person.avatar_url}
+              alt={person.full_name}
+              width={96}
+              height={96}
+              className={`
+                rounded-full object-cover
+                ring-4 ring-white shadow-md
+                ${isToday ? 'w-24 h-24' : 'w-20 h-20'}
+              `}
+            />
+          ) : (
+            <div
+              className={`
+                flex items-center justify-center
+                rounded-full bg-white text-slate-700 font-bold
+                ring-4 ring-white shadow-md
+                ${isToday ? 'w-24 h-24 text-2xl' : 'w-20 h-20 text-xl'}
+              `}
+            >
+              {person.full_name?.[0]?.toUpperCase()}
+            </div>
+          )}
+        </div>
+  
+        {/* Text */}
+        <div className="mt-3 text-center">
+          <p
+            className={`
+              font-semibold
+              ${isToday ? 'text-white' : 'text-slate-900'}
+            `}
+          >
+            {capitalizeName(person.full_name)}
+          </p>
+  
+          <p
+            className={`
+              text-sm
+              ${isToday ? 'text-white/80' : 'text-slate-700'}
+            `}
+          >
+            {person.job_title}
+          </p>
+  
+          <p
+            className={`
+              mt-1 text-sm font-medium
+              ${isToday ? 'text-white/90' : 'text-slate-800'}
+            `}
+          >
+            {person.upcomingDate.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
+          </p>
+        </div>
       </div>
-      <div className="flex-1 flex flex-col items-center justify-center min-h-0 w-full">
-        {person.avatar_url ? (
-          <Image
-            src={person.avatar_url}
-            alt={person.full_name}
-            width={80}
-            height={80}
-            className="w-30 h-30 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-md"
-          />
-        ) : (
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-sky-200 to-blue-200 flex items-center justify-center text-2xl font-semibold text-blue-700 flex-shrink-0 ring-2 ring-white shadow-md">
-            {person.full_name?.[0]?.toUpperCase()}
-          </div>
-        )}
-        <p className="font-semibold text-white text-base mt-2.5 truncate w-full text-center">{capitalizeName(person.full_name)}</p>
-        <p className="text-sm text-white/80 mt-0.5 truncate w-full text-center">{person.job_title || '--'}</p>
-        {/* <p className="text-sm text-white/80 mt-0.5 truncate w-full text-center">{person.department || '--'}</p> */}
-        <p className="text-sm font-medium mt-2 text-white/80">
-          {person.upcomingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-        </p>
-      </div>
-    </div>
-  )
-}
+    )
+  }
+  
+
 
 export default function UpcomingBirthdays({ birthdays, loading }: { birthdays: BirthdayProfile[]; loading: boolean }) {
   const todayBirthdays = birthdays.filter(p => isToday(p.upcomingDate))
@@ -162,8 +235,8 @@ export default function UpcomingBirthdays({ birthdays, loading }: { birthdays: B
             Birthday Today
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {todayBirthdays.map((person, index) => (
-              <BirthdayCard key={person.id} person={person} isTodayBirthday variant={index % 2 === 0 ? 'odd' : 'even'} />
+            {todayBirthdays.map((person) => (
+              <BirthdayCard key={person.id} person={person} isTodayBirthday />
             ))}
           </div>
         </div>
@@ -176,8 +249,8 @@ export default function UpcomingBirthdays({ birthdays, loading }: { birthdays: B
           </h2>
           {/* <p className="text-slate-500 text-sm mb-4">Birthdays in the next 30 days</p> */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {upcomingBirthdays.map((person, index) => (
-              <BirthdayCard key={person.id} person={person} variant={index % 2 === 0 ? 'odd' : 'even'} />
+            {upcomingBirthdays.map((person) => (
+              <BirthdayCard key={person.id} person={person} />
             ))}
           </div>
         </div>

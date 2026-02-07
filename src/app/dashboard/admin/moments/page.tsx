@@ -64,7 +64,7 @@ export default function AdminMomentsPage() {
     <div
       className="min-h-screen flex flex-col"
       style={{
-        backgroundImage: "linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)), url('/image/bg.png')",
+        backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
