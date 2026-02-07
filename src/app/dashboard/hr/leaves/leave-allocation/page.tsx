@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/hooks/useSupabase'
+import { capitalizeName } from '@/lib/utils/string'
 import Sidebar from '@/components/Sidebar'
+import LeavesNav from '@/components/LeavesNav'
 
 type LeaveType = {
   id: string
@@ -51,6 +53,7 @@ export default function LeaveAllocationPage() {
   const [newTypeName, setNewTypeName] = useState('')
   const [newTypeDefault, setNewTypeDefault] = useState<number>(0)
   const [savingType, setSavingType] = useState(false)
+  const [deletingTypeId, setDeletingTypeId] = useState<string | null>(null)
 
   const [allocationUserId, setAllocationUserId] = useState<string>('')
   const [allocationValue, setAllocationValue] = useState<number>(0)
@@ -76,12 +79,7 @@ export default function LeaveAllocationPage() {
         .eq('id', user.id)
         .single()
 
-      if (profile?.status !== 'active') {
-        router.replace('/pending-approval')
-        return
-      }
-
-      if (profile?.role !== 'hr' && profile?.role !== 'admin') {
+      if (profile?.role !== 'hr') {
         router.replace('/dashboard')
         return
       }
@@ -180,6 +178,29 @@ export default function LeaveAllocationPage() {
     setLeaveTypes(prev => prev.map(t => (t.id === typeId ? { ...t, default_balance: value } : t)))
   }
 
+  const handleDeleteType = async (typeId: string) => {
+    const target = leaveTypes.find(t => t.id === typeId)
+    if (!target || target.is_system) return
+    const confirmDelete = window.confirm(`Delete "${target.name}" leave type?`)
+    if (!confirmDelete) return
+    setDeletingTypeId(typeId)
+    const { error } = await supabase
+      .from('leave_types')
+      .delete()
+      .eq('id', typeId)
+      .eq('is_system', false)
+    setDeletingTypeId(null)
+    if (!error) {
+      setLeaveTypes(prev => prev.filter(t => t.id !== typeId))
+      if (selectedTypeId === typeId) {
+        setSelectedTypeId(() => {
+          const next = leaveTypes.find(t => t.id !== typeId)?.id || ''
+          return next
+        })
+      }
+    }
+  }
+
   const handleApplyDefaults = async () => {
     if (!selectedType) return
     setSeedingDefaults(true)
@@ -239,37 +260,43 @@ export default function LeaveAllocationPage() {
     setSavingAllocation(false)
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Loading leave allocation...</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div
+      className="h-screen flex flex-col overflow-hidden"
+      style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}
+    >
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
 
-      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
-        <div className="w-full max-w-6xl">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Leave Allocation</h1>
-            <p className="text-gray-600 mt-2">Create leave types and allocate yearly balances</p>
+      <main className="admin-main flex flex-col min-h-0">
+        <div className="w-full max-w-6xl flex flex-col flex-1 min-h-0">
+          <div className="shrink-0">
+            <LeavesNav basePath="/dashboard/hr/leaves" />
+          </div>
+          <div className="mb-4 shrink-0">
+            <h1 className="text-xl font-bold text-[var(--text-primary)]">Annual Leave Allocation Setup</h1>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Leave Types</h2>
-              <div className="space-y-3">
+          {loading ? (
+            <div className="py-12 flex justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            </div>
+          ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 lg:items-stretch">
+            {/* Leave Types - same height as right panel */}
+            <div
+              className="rounded-xl shadow-sm border border-[var(--border)] p-6 flex flex-col min-h-0"
+              style={{ backgroundImage: 'linear-gradient(45deg, #ffffff 0%, var(--primary-light) 75%)' }}
+            >
+              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4 shrink-0">Leave Types</h2>
+              <div className="space-y-3 overflow-y-auto no-scrollbar min-h-0 flex-1">
                 {leaveTypes.map(type => (
-                  <div key={type.id} className="flex items-center gap-2">
+                  <div key={type.id} className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => setSelectedTypeId(type.id)}
                       className={`flex-1 text-left px-3 py-2 rounded-lg border ${
                         selectedTypeId === type.id
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                          ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
+                          : 'bg-white text-slate-700 border-[var(--border)] hover:bg-[var(--primary-light)]/60'
                       }`}
                     >
                       {type.name}
@@ -277,22 +304,33 @@ export default function LeaveAllocationPage() {
                     <input
                       type="number"
                       min={0}
-                      className="w-20 border border-gray-200 rounded-lg px-2 py-2 text-sm"
+                      className="w-20 border border-[var(--border)] rounded-lg px-2 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
                       defaultValue={type.default_balance ?? 0}
                       onBlur={(e) => handleUpdateDefault(type.id, Number(e.target.value))}
                     />
+                    {!type.is_system && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteType(type.id)}
+                        disabled={deletingTypeId === type.id}
+                        className="px-2 py-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        title="Delete leave type"
+                      >
+                        {deletingTypeId === type.id ? '...' : 'Delete'}
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
 
-              <div className="mt-6 border-t border-gray-200 pt-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Add Custom Type</h3>
+              <div className="mt-6 border-t border-[var(--border)] pt-4 shrink-0">
+                <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-2">Add Custom Type</h3>
                 <input
                   type="text"
                   placeholder="Type name"
                   value={newTypeName}
                   onChange={(e) => setNewTypeName(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-2"
+                  className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm mb-2 bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
                 />
                 <input
                   type="number"
@@ -300,40 +338,44 @@ export default function LeaveAllocationPage() {
                   placeholder="Default balance"
                   value={newTypeDefault}
                   onChange={(e) => setNewTypeDefault(Number(e.target.value))}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3"
+                  className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm mb-3 bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
                 />
                 <button
                   onClick={handleCreateType}
                   disabled={savingType}
-                  className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-800"
+                  className="w-full px-4 py-2 rounded-lg text-sm font-semibold btn-primary"
                 >
                   {savingType ? 'Creating...' : 'Create Leave Type'}
                 </button>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Allocate Balances</h2>
+            {/* Allocate Balances - same height, only employee table scrolls */}
+            <div
+              className="rounded-xl shadow-sm border border-[var(--border)] p-6 lg:col-span-2 flex flex-col min-h-0"
+              style={{ backgroundImage: 'linear-gradient(45deg, #ffffff 0%, var(--primary-light) 75%)' }}
+            >
+              <div className="flex items-center justify-between mb-4 shrink-0">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Allocate Balances</h2>
                 <button
                   onClick={handleApplyDefaults}
                   disabled={seedingDefaults || !selectedType}
-                  className="text-sm font-semibold px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
+                  className="text-sm font-semibold px-3 py-2 rounded-lg border border-[var(--primary-muted)] bg-[var(--primary-muted)] text-[var(--primary-hover)] hover:bg-[var(--primary-light)]/60"
                 >
                   {seedingDefaults ? 'Applying...' : 'Apply Defaults To New Employees'}
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 shrink-0">
                 <select
                   value={allocationUserId}
                   onChange={(e) => setAllocationUserId(e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
                 >
-                  <option value="">Select employee</option>
+                  <option value="">Select user</option>
                   {employees.map(emp => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.full_name || emp.email_id || emp.id}
+                      {capitalizeName(emp.full_name) || emp.email_id || emp.id}
                     </option>
                   ))}
                 </select>
@@ -341,7 +383,7 @@ export default function LeaveAllocationPage() {
                 <select
                   value={selectedTypeId}
                   onChange={(e) => setSelectedTypeId(e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
                 >
                   {leaveTypes.map(type => (
                     <option key={type.id} value={type.id}>
@@ -355,7 +397,7 @@ export default function LeaveAllocationPage() {
                   min={0}
                   value={allocationValue}
                   onChange={(e) => setAllocationValue(Number(e.target.value))}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
                   placeholder="Allocated"
                 />
               </div>
@@ -363,19 +405,20 @@ export default function LeaveAllocationPage() {
               <button
                 onClick={handleAllocate}
                 disabled={savingAllocation}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
+                className="mb-4 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold btn-primary w-fit"
               >
                 {savingAllocation ? 'Saving...' : 'Save Allocation'}
               </button>
 
-              <div className="mt-8 overflow-x-auto">
+              <div className="flex-1 min-h-0 overflow-auto no-scrollbar border border-[var(--border)] rounded-lg bg-white/80">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead className="bg-[var(--primary-muted)] border-b border-[var(--border)] sticky top-0 z-10">
                     <tr>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-900">Employee</th>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-900">Allocated</th>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-900">Used</th>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-900">Remaining</th>
+                      <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Employee</th>
+                      <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Role</th>
+                      <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Allocated</th>
+                      <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Used</th>
+                      <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Remaining</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -386,7 +429,8 @@ export default function LeaveAllocationPage() {
                       const remaining = Math.max(allocated - used, 0)
                       return (
                         <tr key={emp.id}>
-                          <td className="px-4 py-2 text-gray-900">{emp.full_name || emp.email_id || '—'}</td>
+                          <td className="px-4 py-2 text-gray-900">{capitalizeName(emp.full_name) || emp.email_id || '—'}</td>
+                          <td className="px-4 py-2 text-gray-700 capitalize">{emp.role || '—'}</td>
                           <td className="px-4 py-2 text-gray-700">{allocated}</td>
                           <td className="px-4 py-2 text-gray-700">{used}</td>
                           <td className="px-4 py-2 text-gray-700">{remaining}</td>
@@ -398,6 +442,7 @@ export default function LeaveAllocationPage() {
               </div>
             </div>
           </div>
+          )}
         </div>
       </main>
     </div>

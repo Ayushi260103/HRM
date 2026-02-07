@@ -6,9 +6,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useSupabase } from '@/hooks/useSupabase'
 import { capitalizeName } from '@/lib/utils/string'
-import { getLocalDateString, getLocalDayOfWeek } from '@/lib/utils/date'
+import { getDateString, getLocalDateString, getLocalDayOfWeek } from '@/lib/utils/date'
 import Sidebar from '@/components/Sidebar'
 import Notifications from '@/components/Notifications'
+import { useAttendance } from '@/hooks/useAttendance'
 
 type UserState = {
   email: string | null
@@ -30,7 +31,7 @@ type Announcement = {
   author_position?: string | null
 }
 type GenderCounts = { male: number; female: number; other: number }
-type PendingUser = { id: string; full_name: string | null; email_id: string; created_at: string }
+// type PendingUser = { id: string; full_name: string | null; email_id: string; created_at: string }
 type PendingLeaveRequest = {
   id: string
   start_date: string
@@ -75,7 +76,7 @@ function buildAgeBuckets(employees: { dob?: string | null }[]): AgeBucket[] {
 }
 
 function getNearestUpcomingBirthdays(
-  employees: { full_name?: string | null; dob?: string | null , department?: string | null }[],
+  employees: { full_name?: string | null; dob?: string | null }[],
   limit = 2,
 ): { full_name: string | null; daysUntil: number; nextBirthdayStr: string }[] {
   const today = new Date()
@@ -148,17 +149,60 @@ export default function AdminHomePage() {
   const [upcomingHolidays, setUpcomingHolidays] = useState<Holiday[]>([])
   const [genderCounts, setGenderCounts] = useState<GenderCounts>({ male: 0, female: 0, other: 0 })
   const [ageBuckets, setAgeBuckets] = useState<AgeBucket[]>([])
-  const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
+  // const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
   const [pendingLeaveCount, setPendingLeaveCount] = useState(0)
-  const [latestPendingUser, setLatestPendingUser] = useState<PendingUser | null>(null)
+  // const [latestPendingUser, setLatestPendingUser] = useState<PendingUser | null>(null)
   const [latestPendingLeave, setLatestPendingLeave] = useState<PendingLeaveRequest | null>(null)
   const [latestAnnouncement, setLatestAnnouncement] = useState<Announcement | null>(null)
   const [nearestBirthdays, setNearestBirthdays] = useState<{ full_name: string | null; daysUntil: number; nextBirthdayStr: string }[]>([])
   const [onLeaveOrWeekoffToday, setOnLeaveOrWeekoffToday] = useState(0)
   const [dateTime, setDateTime] = useState('')
+  const [timerSeconds, setTimerSeconds] = useState(0)
   const [departmentCounts, setDepartmentCounts] = useState<DepartmentCount[]>([])
 
   const supabase = useSupabase()
+  const { clockInTime, clockOutTime, loading: loadingAttendance, clockInBlockReason, formatTime, handleClockIn, handleClockOut } = useAttendance(user.userId)
+
+  const formatDuration = (totalSeconds: number) => {
+    const safe = Math.max(0, Math.floor(totalSeconds))
+    const hours = Math.floor(safe / 3600)
+    const minutes = Math.floor((safe % 3600) / 60)
+    const seconds = safe % 60
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }
+
+  useEffect(() => {
+    if (!clockInTime) {
+      setTimerSeconds(0)
+      return
+    }
+
+    const clockInDate = new Date(clockInTime)
+    const todayStr = getLocalDateString()
+    const clockInDay = getDateString(clockInDate)
+
+    if (clockInDay !== todayStr) {
+      setTimerSeconds(0)
+      return
+    }
+
+    if (clockOutTime) {
+      const clockOutDate = new Date(clockOutTime)
+      const diff = (clockOutDate.getTime() - clockInDate.getTime()) / 1000
+      setTimerSeconds(diff)
+      return
+    }
+
+    const tick = () => {
+      const now = new Date()
+      const diff = (now.getTime() - clockInDate.getTime()) / 1000
+      setTimerSeconds(diff)
+    }
+
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [clockInTime, clockOutTime])
 
   useEffect(() => {
     const now = new Date()
@@ -208,7 +252,7 @@ export default function AdminHomePage() {
         .single()
 
       if (cancelled) return
-      if (profile?.role !== 'admin') {
+      if (profile?.role !== 'hr') {
         router.replace('/dashboard')
         return
       }
@@ -239,7 +283,7 @@ export default function AdminHomePage() {
       } else {
         const { data: employeesFallback } = await supabase
           .from('profiles')
-          .select('id, full_name, joining_date, created_at, dob, department')
+          .select('id, full_name, joining_date, created_at, dob')
           .eq('status', 'active')
           .in('role', ['employee', 'hr'])
         employees = employeesFallback
@@ -301,16 +345,16 @@ export default function AdminHomePage() {
       }
       if (!cancelled) setOnLeaveOrWeekoffToday(onLeaveOrWeekoff.size)
 
-      const { data: pendingUsers, count: pendingCount } = await supabase
-        .from('profiles')
-        .select('id, full_name, email_id, created_at', { count: 'exact' })
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(1)
-      if (!cancelled) {
-        setPendingRequestsCount(pendingCount ?? 0)
-        setLatestPendingUser(pendingUsers?.[0] ?? null)
-      }
+      // const { data: pendingUsers, count: pendingCount } = await supabase
+      //   .from('profiles')
+      //   .select('id, full_name, email_id, created_at', { count: 'exact' })
+      //   .eq('status', 'pending')
+      //   .order('created_at', { ascending: false })
+      //   .limit(1)
+      // if (!cancelled) {
+      //   setPendingRequestsCount(pendingCount ?? 0)
+      //   setLatestPendingUser(pendingUsers?.[0] ?? null)
+      // }
 
       const { data: pendingLeaves, count: pendingLeaveCountVal } = await supabase
         .from('leave_requests')
@@ -386,10 +430,10 @@ export default function AdminHomePage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
-      <Sidebar userEmail={user.email} userName={user.userName} avatarUrl={user.avatarUrl} role="admin" />
+      <Sidebar userEmail={user.email} userName={user.userName} avatarUrl={user.avatarUrl} role="hr" />
 
       <div className="admin-notifications-fixed">
-        {user.userId && <Notifications role="admin" userId={user.userId} />}
+        {user.userId && <Notifications role="hr" userId={user.userId} />}
       </div>
 
       <main className="admin-main mt-6">
@@ -404,275 +448,170 @@ export default function AdminHomePage() {
             </p>
           </div>
 
-          {/* Row 1: Stats - 4 equal cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Total Employees */}
-            <div className="card card-body p-5 flex flex-col min-h-[140px] dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-              <h2 className="text-sm font-semibold text-slate-900 mb-2">Total Employees</h2>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-2xl font-bold text-slate-900 tracking-tight">{totalEmployees}</span>
-                {newJoiners > 0 && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                    +{newJoiners} new
-                  </span>
+          {/* Clock In/Out + Latest Leave Request */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div
+              className="card p-5 dashboard-card lg:col-span-2"
+              style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-light) 0%, #ffffff 65%)' }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Work Timer</p>
+                {clockInTime && !clockOutTime && (
+                  <span className="text-xs font-semibold text-[var(--primary)]">Running</span>
                 )}
               </div>
-              <div className="mt-auto pt-3">
-                <Link
-                  href="/dashboard/admin/employees"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors"
-                  aria-label="View employee details"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="12" y1="18" x2="12" y2="12" />
-                    <line x1="9" y1="15" x2="15" y2="15" />
-                  </svg>
-                  View details
-                </Link>
-              </div>
-            </div>
-
-            {/* Upcoming Holidays */}
-            <div className="card card-body p-5 flex flex-col min-h-[140px] dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-              <h2 className="text-sm font-semibold text-slate-900 mb-3">Upcoming Holidays</h2>
-              {upcomingHolidays.length === 0 ? (
-                <p className="text-sm text-slate-500">None</p>
+              <p className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">
+                {formatDuration(timerSeconds)}
+              </p>
+              {loadingAttendance ? (
+                <p className="text-sm text-slate-500">Loading...</p>
               ) : (
-                <ul className="space-y-1.5 flex-1">
-                  {upcomingHolidays.slice(0, 3).map(h => (
-                    <li key={h.id} className="flex justify-between items-baseline text-sm gap-2">
-                      <span className="text-slate-700 truncate">{h.name}</span>
-                      <span className="text-slate-500 text-xs shrink-0">
-                        {new Date(h.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
-                      </span>
-                    </li>
-                  ))}
-                  {upcomingHolidays.length > 3 && (
-                    <li className="text-xs text-slate-500">+{upcomingHolidays.length - 3} more</li>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="rounded-lg border border-[var(--border)] bg-[var(--primary-light)]/40 p-3">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Clock In</p>
+                      <p className="text-base font-bold text-slate-900">{formatTime(clockInTime)}</p>
+                    </div>
+                    <div className="rounded-lg border border-[var(--border)] bg-[var(--primary-light)]/40 p-3">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Clock Out</p>
+                      <p className="text-base font-bold text-slate-900">{formatTime(clockOutTime)}</p>
+                    </div>
+                  </div>
+                  {clockInBlockReason && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      Cannot clock in: {clockInBlockReason}
+                    </div>
                   )}
-                </ul>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {!clockInTime && (
+                      <button
+                        onClick={handleClockIn}
+                        disabled={!!clockInBlockReason}
+                        className="flex-1 rounded-lg bg-[var(--primary)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--primary-hover)] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Clock In
+                      </button>
+                    )}
+                    {clockInTime && !clockOutTime && (
+                      <button
+                        onClick={handleClockOut}
+                        className="flex-1 rounded-lg border border-[var(--primary)] bg-white px-3 py-2 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--primary-light)] transition"
+                      >
+                        Clock Out
+                      </button>
+                    )}
+                    {clockOutTime && (
+                      <div className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--primary-light)] px-3 py-2 text-center">
+                        <p className="text-xs font-medium text-[var(--primary)]">Shift Completed</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Gender Ratio */}
-            <div className="card card-body p-5 flex flex-col min-h-[140px] dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-              <h2 className="text-sm font-semibold text-slate-900 mb-3">Gender Ratio</h2>
-              <div className="flex items-center gap-3 flex-1">
-                <div className="relative w-20 h-20 shrink-0">
-                  <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-label="Gender ratio donut chart">
-                    <circle cx="50" cy="50" r="42" fill="none" stroke={MALE_COLOR} strokeWidth="16" strokeDasharray={genderTotal > 0 ? `${(malePct / 100) * 264} 264` : '264'} strokeLinecap="round" />
-                    <circle cx="50" cy="50" r="42" fill="none" stroke={FEMALE_COLOR} strokeWidth="16" strokeDasharray={genderTotal > 0 ? `${(femalePct / 100) * 264} 264` : '0 264'} strokeDashoffset={genderTotal > 0 ? -((malePct / 100) * 264) : 0} strokeLinecap="round" />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                    <span className="text-xs font-bold" style={{ color: MALE_COLOR }}>{malePct}%</span>
-                    <span className="text-xs font-bold" style={{ color: FEMALE_COLOR }}>{femalePct}%</span>
+            <div
+              className="card p-5 dashboard-card max-w-md lg:justify-self-end w-full"
+              style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 85%)' }}
+            >
+              <h2 className="text-sm sm:text-base font-semibold text-slate-900 mb-2">
+                {pendingLeaveCount} {pendingLeaveCount === 1 ? 'person has' : 'people have'} applied for leave
+              </h2>
+              {latestPendingLeave ? (
+                <div className="flex flex-col gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-900 truncate">
+                      {capitalizeName(latestPendingLeave.profile?.full_name) || '—'}
+                    </p>
+                    <p className="text-sm text-slate-600 truncate">
+                      {latestPendingLeave.leave_type?.name || 'Leave'} • {new Date(latestPendingLeave.start_date).toLocaleDateString()} – {new Date(latestPendingLeave.end_date).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5 truncate" title={latestPendingLeave.reason}>
+                      {latestPendingLeave.reason}
+                    </p>
                   </div>
+                  <Link
+                    href="/dashboard/hr/leaves/leave-requests"
+                    className="w-fit px-3 py-2 rounded-lg text-xs font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                  >
+                    Review
+                  </Link>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: MALE_COLOR }}>
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: MALE_COLOR }} aria-hidden />
-                    Male
-                  </span>
-                  <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: FEMALE_COLOR }}>
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: FEMALE_COLOR }} aria-hidden />
-                    Female
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Links */}
-            <div className="card card-body p-5 flex flex-col min-h-[140px] dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-              <h2 className="text-sm font-semibold text-slate-900 mb-3">Quick Links</h2>
-              <div className="flex flex-col gap-2">
-                <Link href="/dashboard/admin/leaves/leave-allocation" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors w-fit">
-                  Allot leaves
-                </Link>
-                <Link href="/dashboard/admin/leaves/holiday-allocation" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors w-fit">
-                  Add holiday
-                </Link>
-              </div>
+              ) : (
+                <p className="text-sm text-slate-500">No pending leave requests.</p>
+              )}
             </div>
           </div>
 
-          {/* Row 2: Action items + Department Chart */}
-          {(latestPendingUser || latestPendingLeave || departmentCounts.length > 0) && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {latestPendingUser && (
-                <div className="card p-4 dashboard-card max-w-md w-full" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-                  <h3 className="text-sm font-semibold text-slate-900 mb-4">
-                    {pendingRequestsCount} pending request{pendingRequestsCount !== 1 ? 's' : ''} need{pendingRequestsCount === 1 ? 's' : ''} your approval
-                  </h3>
-                  <div className="flex flex-col gap-2">
-                    <div className="min-w-0">
-                      <p className="font-medium text-slate-900 truncate">{capitalizeName(latestPendingUser.full_name) || 'No name'}</p>
-                      <p className="text-sm text-slate-600 truncate">{latestPendingUser.email_id || '???'}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">Applied {new Date(latestPendingUser.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <Link
-                      href="/dashboard/admin/pending"
-                      className="w-fit px-3 py-2 rounded-lg text-xs font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                    >
-                      Review
-                    </Link>
-                  </div>
-                </div>
-              )}
-              {latestPendingLeave && (
-                <div className="card p-4 dashboard-card max-w-md w-full" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-                  <h3 className="text-sm font-semibold text-slate-900 mb-4">
-                    {pendingLeaveCount} {pendingLeaveCount === 1 ? 'person has' : 'people have'} applied for leave
-                  </h3>
-                  <div className="flex flex-col gap-2">
-                    <div className="min-w-0">
-                      <p className="font-medium text-slate-900 truncate">{capitalizeName(latestPendingLeave.profile?.full_name) || '???'}</p>
-                      <p className="text-sm text-slate-600 truncate">{latestPendingLeave.leave_type?.name || 'Leave'} ??? {new Date(latestPendingLeave.start_date).toLocaleDateString()} ??? {new Date(latestPendingLeave.end_date).toLocaleDateString()}</p>
-                      <p className="text-xs text-slate-500 mt-0.5 truncate" title={latestPendingLeave.reason}>{latestPendingLeave.reason}</p>
-                    </div>
-                    <Link
-                      href="/dashboard/admin/leaves/leave-requests"
-                      className="w-fit px-3 py-2 rounded-lg text-xs font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                    >
-                      Review
-                    </Link>
-                  </div>
-                </div>
-              )}
-              <div className="card p-5 dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-slate-900">Employees by Department</h3>
-                  <span className="text-xs text-slate-500">{departmentCounts.reduce((sum, d) => sum + d.count, 0)} total</span>
-                </div>
-                {departmentCounts.length === 0 ? (
-                  <p className="text-sm text-slate-500">No department data.</p>
-                ) : (
-                  <div className="flex flex-col md:flex-row gap-6 items-center">
-                    <div className="relative w-36 h-36 shrink-0">
-                      <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                        {(() => {
-                          const total = departmentCounts.reduce((sum, d) => sum + d.count, 0) || 1
-                          let offset = 0
-                          return departmentCounts.map((d, idx) => {
-                            const pct = d.count / total
-                            const dash = `${pct * 264} 264`
-                            const circle = (
-                              <circle
-                                key={d.label + idx}
-                                cx="50"
-                                cy="50"
-                                r="42"
-                                fill="none"
-                                stroke={d.color}
-                                strokeWidth="16"
-                                strokeDasharray={dash}
-                                strokeDashoffset={-offset}
-                                strokeLinecap="round"
-                              />
-                            )
-                            offset += pct * 264
-                            return circle
-                          })
-                        })()}
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span className="text-xs text-slate-500">Departments</span>
-                        <span className="text-lg font-semibold text-slate-900">{departmentCounts.length}</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 gap-y-2 w-full">
-                      {departmentCounts.map((d) => (
-                        <div key={d.label} className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} aria-hidden />
-                          <span className="text-sm text-slate-700 truncate">{d.label}</span>
-                          <span className="text-xs text-slate-500 ml-auto">{d.count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div
+              className="card p-5 dashboard-card"
+              style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-slate-900">Employees by Department</h3>
+                <span className="text-xs text-slate-500">{departmentCounts.reduce((sum, d) => sum + d.count, 0)} total</span>
               </div>
-            </div>
-          )}
-
-          {/* Row 3: Employee Age Graph + Upcoming Birthdays + On Leave/Week Off Today */}
-          {(ageBuckets.some((b) => b.count > 0) || nearestBirthdays.length > 0 || totalEmployees > 0) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {ageBuckets.some((b) => b.count > 0) ? (
-              <div className="card p-5 dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-                <h3 className="text-sm font-semibold text-slate-900 mb-4">Employees by Age</h3>
-                <div className="flex items-end gap-2 h-36 pb-1">
-                  {ageBuckets.map((b) => {
-                    const maxCount = Math.max(...ageBuckets.map((x) => x.count), 1)
-                    const maxBarPx = 80
-                    const barHeightPx = maxCount > 0 ? Math.round((b.count / maxCount) * maxBarPx) : 0
-                    const heightPx = b.count > 0 ? Math.max(barHeightPx, 12) : 0
-                    return (
-                      <div key={b.label} className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                        <div
-                          className="w-full max-w-[28px] rounded-t-lg bg-gradient-to-t from-blue-600 to-blue-400 shadow-md hover:shadow-lg hover:from-blue-700 hover:to-blue-500 transition-all duration-200 relative"
-                          style={{ height: `${heightPx}px` }}
-                          title={`${b.label}: ${b.count} employee${b.count !== 1 ? 's' : ''}`}
-                        />
-                        <span className="text-xs font-semibold text-slate-700">{b.count}</span>
-                        <span className="text-xs font-medium text-slate-600">{b.label}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+              {departmentCounts.length === 0 ? (
+                <p className="text-sm text-slate-500">No department data.</p>
               ) : (
-                <div className="card p-5 flex items-center justify-center dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-                  <p className="text-sm text-slate-500">No age data.</p>
-                </div>
-              )}
-              <div className="card p-5 dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-                <h3 className="text-sm font-semibold text-slate-900 mb-4">Upcoming Birthdays</h3>
-                {nearestBirthdays.length > 0 ? (
-                  <div className="space-y-4">
-                    {nearestBirthdays.map((b, i) => (
-                      <div key={i} className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full shrink-0 flex items-center justify-center text-lg font-semibold bg-[var(--primary-light)] text-[var(--primary)]">
-                          {(b.full_name || '?')[0].toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-slate-900">{capitalizeName(b.full_name) || 'Employee'}</p>
-                          <p className="text-sm text-slate-600">
-                            {b.daysUntil === 0
-                              ? 'Today'
-                              : b.daysUntil === 1
-                                ? 'Tomorrow'
-                                : `${b.daysUntil} days`} — {b.nextBirthdayStr}
-                          </p>
-                        </div>
+                <div className="flex flex-col md:flex-row gap-6 items-center">
+                  <div className="relative w-36 h-36 shrink-0">
+                    <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                      {(() => {
+                        const total = departmentCounts.reduce((sum, d) => sum + d.count, 0) || 1
+                        let offset = 0
+                        return departmentCounts.map((d, idx) => {
+                          const pct = d.count / total
+                          const dash = `${pct * 264} 264`
+                          const circle = (
+                            <circle
+                              key={d.label + idx}
+                              cx="50"
+                              cy="50"
+                              r="42"
+                              fill="none"
+                              stroke={d.color}
+                              strokeWidth="16"
+                              strokeDasharray={dash}
+                              strokeDashoffset={-offset}
+                              strokeLinecap="round"
+                            />
+                          )
+                          offset += pct * 264
+                          return circle
+                        })
+                      })()}
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span className="text-xs text-slate-500">Departments</span>
+                      <span className="text-lg font-semibold text-slate-900">{departmentCounts.length}</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 w-full">
+                    {departmentCounts.map((d) => (
+                      <div key={d.label} className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} aria-hidden />
+                        <span className="text-sm text-slate-700 truncate">{d.label}</span>
+                        <span className="text-xs text-slate-500 ml-auto">{d.count}</span>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-sm text-slate-500">No upcoming birthdays.</p>
-                )}
-              </div>
-              <div className="card p-5 dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-                <h3 className="text-sm font-semibold text-slate-900 mb-4">On Leave / Week Off Today</h3>
-                <p className="text-2xl font-bold text-slate-900 tracking-tight">{onLeaveOrWeekoffToday}</p>
-                <p className="text-sm text-slate-500 mt-1">
-                  {onLeaveOrWeekoffToday === 1 ? 'employee' : 'employees'} on leave or week off
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Row 4: Latest Announcement */}
-          <div>
-            {latestAnnouncement ? (
-              <div className="card p-4 dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-slate-900">Announcements</h3>
-                  <Link href="/dashboard/admin/announcements" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors">
-                    View all
-                  </Link>
                 </div>
+              )}
+            </div>
+
+            <div
+              className="card p-5 dashboard-card"
+              style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-light) 0%, #ffffff 70%)' }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-slate-900">Announcements</h3>
+                <Link href="/dashboard/hr/announcements" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors">
+                  View all
+                </Link>
+              </div>
+              {latestAnnouncement ? (
                 <div className="flex gap-4">
                   {latestAnnouncement.author_avatar_url ? (
                     <Image
@@ -704,19 +643,199 @@ export default function AdminHomePage() {
                     <p className="text-xs text-slate-500 mt-2">{new Date(latestAnnouncement.created_at).toLocaleString()}</p>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="card p-4 dashboard-card" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-slate-900">Announcements</h3>
-                  <Link href="/dashboard/admin/announcements" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors">
-                    View all
-                  </Link>
-                </div>
+              ) : (
                 <p className="text-sm text-slate-500">No announcements yet.</p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
+
+          {/* Row 1: Stats - 4 equal cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Total Employees */}
+            <div
+              className="card card-body p-5 flex flex-col min-h-[140px] dashboard-card"
+              style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-light) 0%, #ffffff 70%)' }}
+            >
+              <h2 className="text-sm font-semibold text-slate-900 mb-2">Total Employees</h2>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-2xl font-bold text-slate-900 tracking-tight">{totalEmployees}</span>
+                {newJoiners > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                    +{newJoiners} new
+                  </span>
+                )}
+              </div>
+              <div className="mt-auto pt-3">
+                <Link
+                  href="/dashboard/hr/employees"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors"
+                  aria-label="View employee details"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="12" y1="18" x2="12" y2="12" />
+                    <line x1="9" y1="15" x2="15" y2="15" />
+                  </svg>
+                  View details
+                </Link>
+              </div>
+            </div>
+
+            {/* Upcoming Holidays */}
+            <div
+              className="card card-body p-5 flex flex-col min-h-[140px] dashboard-card"
+              style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}
+            >
+              <h2 className="text-sm font-semibold text-slate-900 mb-3">Upcoming Holidays</h2>
+              {upcomingHolidays.length === 0 ? (
+                <p className="text-sm text-slate-500">None</p>
+              ) : (
+                <ul className="space-y-1.5 flex-1">
+                  {upcomingHolidays.slice(0, 3).map(h => (
+                    <li key={h.id} className="flex justify-between items-baseline text-sm gap-2">
+                      <span className="text-slate-700 truncate">{h.name}</span>
+                      <span className="text-slate-500 text-xs shrink-0">
+                        {new Date(h.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </li>
+                  ))}
+                  {upcomingHolidays.length > 3 && (
+                    <li className="text-xs text-slate-500">+{upcomingHolidays.length - 3} more</li>
+                  )}
+                </ul>
+              )}
+            </div>
+
+            {/* Gender Ratio */}
+            <div
+              className="card card-body p-5 flex flex-col min-h-[140px] dashboard-card"
+              style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}
+            >
+              <h2 className="text-sm font-semibold text-slate-900 mb-3">Gender Ratio</h2>
+              <div className="flex items-center gap-3 flex-1">
+                <div className="relative w-20 h-20 shrink-0">
+                  <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-label="Gender ratio donut chart">
+                    <circle cx="50" cy="50" r="42" fill="none" stroke={MALE_COLOR} strokeWidth="16" strokeDasharray={genderTotal > 0 ? `${(malePct / 100) * 264} 264` : '264'} strokeLinecap="round" />
+                    <circle cx="50" cy="50" r="42" fill="none" stroke={FEMALE_COLOR} strokeWidth="16" strokeDasharray={genderTotal > 0 ? `${(femalePct / 100) * 264} 264` : '0 264'} strokeDashoffset={genderTotal > 0 ? -((malePct / 100) * 264) : 0} strokeLinecap="round" />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                    <span className="text-xs font-bold" style={{ color: MALE_COLOR }}>{malePct}%</span>
+                    <span className="text-xs font-bold" style={{ color: FEMALE_COLOR }}>{femalePct}%</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: MALE_COLOR }}>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: MALE_COLOR }} aria-hidden />
+                    Male
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: FEMALE_COLOR }}>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: FEMALE_COLOR }} aria-hidden />
+                    Female
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div
+              className="card card-body p-5 flex flex-col min-h-[140px] dashboard-card"
+              style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-light) 0%, #ffffff 75%)' }}
+            >
+              <h2 className="text-sm font-semibold text-slate-900 mb-3">Quick Links</h2>
+              <div className="flex flex-col gap-2">
+                <Link href="/dashboard/hr/leaves/leave-allocation" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors w-fit">
+                  Allot leaves
+                </Link>
+                <Link href="/dashboard/hr/leaves/holiday-allocation" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors w-fit">
+                  Add holiday
+                </Link>
+                <Link href="/dashboard/hr/leaves/leave-apply" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors w-fit">
+                  Apply for leave
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 3: Employee Age Graph + Upcoming Birthdays + On Leave/Week Off Today */}
+          {(ageBuckets.some((b) => b.count > 0) || nearestBirthdays.length > 0 || totalEmployees > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {ageBuckets.some((b) => b.count > 0) ? (
+            <div
+              className="card p-5 dashboard-card"
+              style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-light) 0%, #ffffff 70%)' }}
+            >
+                <h3 className="text-sm font-semibold text-slate-900 mb-4">Employees by Age</h3>
+                <div className="flex items-end gap-2 h-36 pb-1">
+                  {ageBuckets.map((b) => {
+                    const maxCount = Math.max(...ageBuckets.map((x) => x.count), 1)
+                    const maxBarPx = 80
+                    const barHeightPx = maxCount > 0 ? Math.round((b.count / maxCount) * maxBarPx) : 0
+                    const heightPx = b.count > 0 ? Math.max(barHeightPx, 12) : 0
+                    return (
+                      <div key={b.label} className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+                        <div
+                          className="w-full max-w-[28px] rounded-t-lg bg-gradient-to-t from-blue-600 to-blue-400 shadow-md hover:shadow-lg hover:from-blue-700 hover:to-blue-500 transition-all duration-200 relative"
+                          style={{ height: `${heightPx}px` }}
+                          title={`${b.label}: ${b.count} employee${b.count !== 1 ? 's' : ''}`}
+                        />
+                        <span className="text-xs font-semibold text-slate-700">{b.count}</span>
+                        <span className="text-xs font-medium text-slate-600">{b.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              ) : (
+                <div
+                  className="card p-5 flex items-center justify-center dashboard-card"
+                  style={{ backgroundImage: 'linear-gradient(135deg, var(--primary-light) 0%, #ffffff 70%)' }}
+                >
+                  <p className="text-sm text-slate-500">No age data.</p>
+                </div>
+              )}
+          <div
+            className="card p-5 dashboard-card"
+            style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 85%)' }}
+          >
+                <h3 className="text-sm font-semibold text-slate-900 mb-4">Upcoming Birthdays</h3>
+                {nearestBirthdays.length > 0 ? (
+                  <div className="space-y-4">
+                    {nearestBirthdays.map((b, i) => (
+                      <div key={i} className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full shrink-0 flex items-center justify-center text-lg font-semibold bg-[var(--primary-light)] text-[var(--primary)]">
+                          {(b.full_name || '?')[0].toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900">{capitalizeName(b.full_name) || 'Employee'}</p>
+                          <p className="text-sm text-slate-600">
+                            {b.daysUntil === 0
+                              ? 'Today'
+                              : b.daysUntil === 1
+                                ? 'Tomorrow'
+                                : `${b.daysUntil} days`} — {b.nextBirthdayStr}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">No upcoming birthdays.</p>
+                )}
+              </div>
+              <div
+                className="card p-5 dashboard-card"
+                style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}
+              >
+                <h3 className="text-sm font-semibold text-slate-900 mb-4">On Leave / Week Off Today</h3>
+                <p className="text-2xl font-bold text-slate-900 tracking-tight">{onLeaveOrWeekoffToday}</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  {onLeaveOrWeekoffToday === 1 ? 'employee' : 'employees'} on leave or week off
+                </p>
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
     </div>

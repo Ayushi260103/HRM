@@ -222,18 +222,6 @@ export default function AdminLeavesPage() {
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return '✅'
-      case 'rejected':
-        return '❌'
-      case 'pending':
-        return '⏳'
-      default:
-        return '📋'
-    }
-  }
 
   const filteredRequests = leaveRequests.filter(r => {
     const statusMatch = filter === 'all' ? true : r.status === filter
@@ -244,7 +232,10 @@ export default function AdminLeavesPage() {
   const selectedRequest = expandedId ? leaveRequests.find(r => r.id === expandedId) : null
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--background)' }}>
+    <div
+      className="h-screen flex flex-col overflow-hidden"
+      style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}
+    >
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
       <main className="admin-main flex flex-col min-h-0">
@@ -252,9 +243,7 @@ export default function AdminLeavesPage() {
           <div className="shrink-0">
             <LeavesNav />
           </div>
-          <div className="page-header shrink-0">
-            <h1 className="page-title">Leave requests</h1>
-          </div>
+          <div className="page-header shrink-0"></div>
 
           {loading ? (
             <div className="py-12 flex justify-center">
@@ -262,12 +251,12 @@ export default function AdminLeavesPage() {
             </div>
           ) : (
             <>
-          {/* Status filter bar - sticky, single line, reduced padding */}
+          {/* Status filter bar */}
           <div className="max-w-2xl mx-auto w-full shrink-0 sticky top-0 z-10 py-2">
-            <div className="card px-4 py-2 rounded-lg border bg-white" style={{ borderColor: 'var(--border)' }}>
-              <div className="flex flex-nowrap items-center justify-center gap-2 sm:gap-3">
-                <span className="text-xs sm:text-sm font-bold text-gray-900 shrink-0">Status Filter:</span>
-                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <div className="card px-4 py-2.5 bg-transparent border-transparent shadow-[0_8px_20px_-12px_rgba(59,130,246,0.65)]" style={{ background: 'transparent' }}>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                <span className="text-xs font-semibold text-slate-600 shrink-0">Status:</span>
+                <div className="flex items-center gap-3 shrink-0">
                   {(['all', 'pending', 'approved', 'rejected'] as const).map(f => (
                     <button
                       key={f}
@@ -276,26 +265,21 @@ export default function AdminLeavesPage() {
                       className={`pb-0.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                         filter === f
                           ? 'text-[var(--primary)] border-b-2 border-[var(--primary)]'
-                          : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent'
+                          : 'text-slate-500 hover:text-slate-700 border-b-2 border-transparent'
                       }`}
                     >
                       {f === 'all' ? 'All' : f === 'pending' ? 'Pending' : f === 'approved' ? 'Approved' : 'Rejected'}
-                      {f !== 'all' && ` (${leaveRequests.filter(r => r.status === f).length})`}
                     </button>
                   ))}
                 </div>
-                <div className="h-4 w-px bg-gray-200 shrink-0" aria-hidden />
-                <label className="relative flex items-center shrink-0">
-                  <span className="absolute left-2 text-gray-400 pointer-events-none" aria-hidden>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  </span>
+                <div className="h-4 w-px bg-slate-200 shrink-0" aria-hidden />
+                <label className="relative flex items-center shrink-0 w-full sm:w-auto sm:ml-auto">
                   <input
                     type="text"
                     value={nameSearch}
                     onChange={(e) => setNameSearch(e.target.value)}
                     placeholder="Search by name"
-                    className="pl-7 pr-2 py-1 text-xs sm:text-sm border rounded-full w-36 sm:w-40 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-                    style={{ borderColor: 'var(--border)' }}
+                    className="input-base pl-4 pr-4 py-2 rounded-full w-full sm:w-60 text-sm bg-white border border-[var(--border)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
                   />
                 </label>
               </div>
@@ -305,7 +289,7 @@ export default function AdminLeavesPage() {
           {/* Portrait detail card overlay - over all requests when one is selected */}
           {selectedRequest && (
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-[2px]"
               style={{ perspective: '1000px' }}
               role="dialog"
               aria-modal="true"
@@ -314,74 +298,67 @@ export default function AdminLeavesPage() {
               <button
                 type="button"
                 onClick={() => setExpandedId(null)}
-                className="absolute inset-0 bg-black/40 transition-opacity"
+                className="absolute inset-0"
                 aria-label="Close overlay"
               />
               <div
-                className="relative z-10 mx-auto rounded-2xl border bg-white shadow-2xl transition-all duration-300 w-fit max-w-[90vw] min-w-[400px]"
-                style={{
-                  transform: 'rotateX(2deg) translateZ(20px)',
-                  boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05)',
-                  borderColor: 'var(--border)',
-                }}
+                className="relative z-10 mx-auto rounded-2xl border border-[var(--border)] bg-white shadow-xl w-fit max-w-[90vw] min-w-[400px]"
+                style={{ boxShadow: '0 25px 50px -12px rgba(15,23,42,0.15)' }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   type="button"
                   onClick={() => setExpandedId(null)}
-                  className="absolute top-3 right-3 z-10 p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                  className="absolute top-3 right-3 z-10 p-1.5 rounded-lg text-slate-500 hover:bg-[var(--primary-light)] hover:text-[var(--primary)] transition-colors"
                   aria-label="Close"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-                <div className="p-5 pt-9 flex flex-col gap-3">
-                  {/* Name and status centered at top */}
-                  <div className="text-center border-b pb-2" style={{ borderColor: 'var(--border)' }}>
-                    <p className="text-sm font-medium text-gray-900">{capitalizeName(selectedRequest.profile?.full_name) || 'Unknown Employee'}</p>
-                    <span className={`inline-block mt-1 ${getStatusBadgeClass(selectedRequest.status)}`}>{getStatusIcon(selectedRequest.status)} {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}</span>
+                <div className="p-6 pt-10 flex flex-col gap-3">
+                  <div className="text-center border-b border-slate-200 pb-3">
+                    <p className="text-sm font-medium text-slate-900">{capitalizeName(selectedRequest.profile?.full_name) || 'Unknown Employee'}</p>
+                    <span className={`inline-block mt-1.5 ${getStatusBadgeClass(selectedRequest.status)}`}>{selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}</span>
                   </div>
                   <div className="flex justify-between items-center gap-4">
-                    <span className="text-xs font-semibold uppercase shrink-0" style={{ color: 'var(--text-secondary)' }}>Email</span>
-                    <span className="text-sm text-gray-900 text-right break-all">{selectedRequest.profile?.email_id || '—'}</span>
+                    <span className="text-xs font-semibold uppercase text-slate-500 shrink-0">Email</span>
+                    <span className="text-sm text-slate-900 text-right break-all">{selectedRequest.profile?.email_id || '—'}</span>
                   </div>
                   <div className="flex justify-between items-center gap-4">
-                    <span className="text-xs font-semibold uppercase shrink-0" style={{ color: 'var(--text-secondary)' }}>Leave type</span>
-                    <span className="text-sm text-gray-900 text-right">{selectedRequest.leave_type?.name || 'Leave'}</span>
+                    <span className="text-xs font-semibold uppercase text-slate-500 shrink-0">Leave type</span>
+                    <span className="text-sm text-slate-900 text-right">{selectedRequest.leave_type?.name || 'Leave'}</span>
                   </div>
                   <div className="flex justify-between items-center gap-4">
-                    <span className="text-xs font-semibold uppercase shrink-0" style={{ color: 'var(--text-secondary)' }}>Date range</span>
-                    <span className="text-sm text-gray-900 text-right">{new Date(selectedRequest.start_date).toLocaleDateString()} – {new Date(selectedRequest.end_date).toLocaleDateString()}</span>
+                    <span className="text-xs font-semibold uppercase text-slate-500 shrink-0">Date range</span>
+                    <span className="text-sm text-slate-900 text-right">{new Date(selectedRequest.start_date).toLocaleDateString()} – {new Date(selectedRequest.end_date).toLocaleDateString()}</span>
                   </div>
                   {selectedRequest.half_day_part && (
                     <div className="flex justify-between items-center gap-4">
-                      <span className="text-xs font-semibold uppercase shrink-0" style={{ color: 'var(--text-secondary)' }}>Half day</span>
-                      <span className="text-sm text-gray-900 text-right">{selectedRequest.half_day_part === 'first' ? 'First half' : 'Second half'}</span>
+                      <span className="text-xs font-semibold uppercase text-slate-500 shrink-0">Half day</span>
+                      <span className="text-sm text-slate-900 text-right">{selectedRequest.half_day_part === 'first' ? 'First half' : 'Second half'}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center gap-4">
-                    <span className="text-xs font-semibold uppercase shrink-0" style={{ color: 'var(--text-secondary)' }}>Requested on</span>
-                    <span className="text-sm text-gray-900 text-right">{new Date(selectedRequest.created_at).toLocaleDateString()}</span>
+                    <span className="text-xs font-semibold uppercase text-slate-500 shrink-0">Requested on</span>
+                    <span className="text-sm text-slate-900 text-right">{new Date(selectedRequest.created_at).toLocaleDateString()}</span>
                   </div>
-                  {/* Reason: full-width block */}
                   <div className="pt-1">
-                    <p className="text-xs font-semibold uppercase mb-1" style={{ color: 'var(--text-secondary)' }}>Reason</p>
-                    <p className="text-sm text-gray-900 rounded-lg p-3 border bg-gray-50" style={{ borderColor: 'var(--border)' }}>{selectedRequest.reason}</p>
+                    <p className="text-xs font-semibold uppercase text-slate-500 mb-1">Reason</p>
+                    <p className="text-sm text-slate-700 rounded-lg p-3 border border-slate-200 bg-slate-50">{selectedRequest.reason}</p>
                   </div>
                   {selectedRequest.comment && (
                     <div>
-                      <p className="text-xs font-semibold uppercase mb-1" style={{ color: 'var(--text-secondary)' }}>Admin comment</p>
-                      <p className="text-sm text-gray-900 rounded-lg p-3 border bg-gray-50" style={{ borderColor: 'var(--border)' }}>{selectedRequest.comment}</p>
+                      <p className="text-xs font-semibold uppercase text-slate-500 mb-1">Admin comment</p>
+                      <p className="text-sm text-slate-700 rounded-lg p-3 border border-slate-200 bg-slate-50">{selectedRequest.comment}</p>
                     </div>
                   )}
                   {selectedRequest.status === 'pending' && (
-                    <div className="pt-2 space-y-2 border-t" style={{ borderColor: 'var(--border)' }}>
-                      <p className="text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Add comment (optional)</p>
+                    <div className="pt-3 space-y-2 border-t border-slate-200">
+                      <p className="text-xs font-semibold uppercase text-slate-500">Add comment (optional)</p>
                       <textarea
                         value={commentData[selectedRequest.id] || ''}
                         onChange={(e) => setCommentData(prev => ({ ...prev, [selectedRequest.id]: e.target.value }))}
                         placeholder="Comment or reason for decision..."
-                        className="w-full px-3 py-2 rounded-lg text-sm border outline-none resize-none focus:ring-2 focus:ring-[var(--primary)]"
-                        style={{ borderColor: 'var(--border)' }}
+                        className="input-base w-full resize-none"
                         rows={2}
                       />
                       <div className="flex gap-3">
@@ -389,7 +366,7 @@ export default function AdminLeavesPage() {
                           type="button"
                           onClick={() => handleApprove(selectedRequest.id)}
                           disabled={actionLoading[selectedRequest.id]}
-                          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:border-emerald-700"
+                          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]"
                         >
                           {actionLoading[selectedRequest.id] ? 'Approving…' : 'Approve'}
                         </button>
@@ -397,7 +374,7 @@ export default function AdminLeavesPage() {
                           type="button"
                           onClick={() => handleReject(selectedRequest.id)}
                           disabled={actionLoading[selectedRequest.id]}
-                          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                         >
                           {actionLoading[selectedRequest.id] ? 'Rejecting…' : 'Reject'}
                         </button>
@@ -409,25 +386,27 @@ export default function AdminLeavesPage() {
             </div>
           )}
 
-          {/* Leave requests table - only this area scrolls */}
-          <div className="flex-1 min-h-0 overflow-y-auto max-w-4xl mx-auto w-full py-4">
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm divide-y divide-gray-200">
-                  <thead className="bg-gray-50" style={{ borderColor: 'var(--border)' }}>
-                    <tr>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight">Name</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight">Email</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight">ID</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight">Applied date</th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-tight">Approve / Reject</th>
+          {/* Leave requests table */}
+          <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar max-w-4xl mx-auto w-full py-4">
+            <div
+              className="overflow-hidden rounded-xl border border-slate-200 shadow-md border-l-[3px] border-l-[var(--primary-hover)] border-r-[3px] border-r-[var(--primary-hover)]"
+              style={{ backgroundImage: 'linear-gradient(45deg, #ffffff 0%, var(--primary-light) 75%)' }}
+            >
+              <div className="overflow-x-auto admin-table-wrap">
+                <table className="min-w-full text-sm divide-y divide-slate-200 table-admin">
+                  <thead>
+                    <tr className="bg-[var(--primary-muted)]">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider ">Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider ">Email</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider ">Applied</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider ">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody>
                     {filteredRequests.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-3 py-8 text-center text-sm text-gray-500">
-                          No {filter === 'all' ? 'leave requests' : filter + ' leave requests'} found.
+                        <td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-500">
+                          No {filter === 'all' ? 'leave requests' : filter + ' requests'} found.
                         </td>
                       </tr>
                     ) : (
@@ -435,43 +414,21 @@ export default function AdminLeavesPage() {
                         <tr
                           key={request.id}
                           onClick={() => setExpandedId(expandedId === request.id ? null : request.id)}
-                          className={`hover:bg-gray-50/80 cursor-pointer ${expandedId === request.id ? 'bg-blue-50/50' : ''}`}
+                          className={`cursor-pointer transition-colors hover:bg-[var(--primary-light)]/60 ${expandedId === request.id ? 'bg-[var(--primary-light)]/70' : ''}`}
                         >
-                          <td className="px-3 py-2 text-xs font-medium text-gray-900 whitespace-nowrap">
+                          <td className="px-4 py-3 text-sm font-medium text-slate-900 whitespace-nowrap">
                             {capitalizeName(request.profile?.full_name) || '—'}
                           </td>
-                          <td className="px-3 py-2 text-xs text-gray-600 max-w-[160px] truncate" title={request.profile?.email_id || undefined}>
+                          <td className="px-4 py-3 text-sm text-[var(--primary-hover)] font-medium max-w-[160px] truncate" title={request.profile?.email_id || undefined}>
                             {request.profile?.email_id || '—'}
                           </td>
-                          <td className="px-3 py-2 text-xs text-gray-500 font-mono">
-                            {request.id.slice(0, 8)}
-                          </td>
-                          <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
+                          <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
                             {new Date(request.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </td>
-                          <td className="px-3 py-2 text-right whitespace-nowrap">
-                            {request.status === 'pending' ? (
-                              <span className="inline-flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                                <button
-                                  type="button"
-                                  onClick={() => handleApprove(request.id)}
-                                  disabled={actionLoading[request.id]}
-                                  className="px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded hover:bg-emerald-100 disabled:opacity-50"
-                                >
-                                  {actionLoading[request.id] ? 'Processing…' : 'Approve'}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleReject(request.id)}
-                                  disabled={actionLoading[request.id]}
-                                  className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 disabled:opacity-50"
-                                >
-                                  {actionLoading[request.id] ? 'Processing…' : 'Reject'}
-                                </button>
-                              </span>
-                            ) : (
-                              <span className="text-xs text-gray-400">—</span>
-                            )}
+                          <td className="px-4 py-3 text-left whitespace-nowrap">
+                            <span className={`badge-common ${getStatusBadgeClass(request.status)}`}>
+                              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                            </span>
                           </td>
                         </tr>
                       ))

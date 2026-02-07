@@ -48,11 +48,18 @@ export default function HrAnnouncementsPage() {
     loadData()
   }, [router, supabase])
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading announcements...</p></div>
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}>
+      <p>Loading announcements...</p>
+    </div>
+  )
   if (!userId || !role) return <div className="p-8">Redirecting...</div>
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}
+    >
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
 
       <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">

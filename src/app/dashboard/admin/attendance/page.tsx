@@ -279,18 +279,27 @@ export default function AttendancePage() {
         <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--background)' }}>
             <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
-            <main className="admin-main flex flex-col min-h-0">
+            <main className="admin-main mt-6 flex flex-col min-h-0">
                 <div className="w-full max-w-6xl flex flex-col flex-1 min-h-0 mx-auto">
-                    <div className="page-header shrink-0">
+                    <div className="mb-12">
+                      <div className="page-header shrink-0 mb-0">
                         <div>
-                            <h1 className="page-title">Attendance</h1>
-                            <p className="page-subtitle">View all employee clock in/out records</p>
+                            <h1 className="page-title text-[var(--text-primary)]">Employees Daily Time Logs</h1>
                         </div>
                         <div className="page-actions">
                             <select
+                                value={statusFilter}
+                                onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+                                className="input-base rounded-lg px-3 py-2 text-sm bg-white min-w-0 flex-1 sm:flex-none sm:min-w-[160px] hover:border-[var(--primary)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
+                            >
+                                {statusTabs.map(({ key, label }) => (
+                                    <option key={key} value={key}>{label}</option>
+                                ))}
+                            </select>
+                            <select
                                 value={rangeFilter}
                                 onChange={e => setRangeFilter(e.target.value as typeof rangeFilter)}
-                                className="rounded-lg px-3 py-2 text-sm bg-white min-w-0 flex-1 sm:flex-none sm:min-w-[140px] border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none"
+                                className="input-base rounded-lg px-3 py-2 text-sm bg-white min-w-0 flex-1 sm:flex-none sm:min-w-[140px] hover:border-[var(--primary)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
                             >
                                 <option value="last_15">Last 15 days</option>
                                 <option value="last_30">Last 30 days</option>
@@ -306,13 +315,13 @@ export default function AttendancePage() {
                                         type="date"
                                         value={customStart}
                                         onChange={e => setCustomStart(e.target.value)}
-                                        className="rounded-lg px-3 py-2 text-sm bg-white min-w-0 w-full sm:w-auto border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none"
+                                        className="input-base rounded-lg px-3 py-2 text-sm bg-white min-w-0 w-full sm:w-auto"
                                     />
                                     <input
                                         type="date"
                                         value={customEnd}
                                         onChange={e => setCustomEnd(e.target.value)}
-                                        className="rounded-lg px-3 py-2 text-sm bg-white min-w-0 w-full sm:w-auto border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none"
+                                        className="input-base rounded-lg px-3 py-2 text-sm bg-white min-w-0 w-full sm:w-auto"
                                     />
                                 </>
                             )}
@@ -328,40 +337,7 @@ export default function AttendancePage() {
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             </button>
                         </div>
-                    </div>
-
-                    {/* Status filter navbar - center aligned, All by default */}
-                    <div className="shrink-0 py-2">
-                        <div className="card px-4 py-2 rounded-lg border bg-white max-w-3xl mx-auto" style={{ borderColor: 'var(--border)' }}>
-                            <div className="flex flex-nowrap items-center justify-center gap-2 sm:gap-3">
-                                <span className="text-xs sm:text-sm font-bold text-gray-900 shrink-0">Status:</span>
-                                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 shrink-0">
-                                    {statusTabs.map(({ key, label }) => (
-                                        <button
-                                            key={key}
-                                            type="button"
-                                            onClick={() => setStatusFilter(key)}
-                                            className={`pb-0.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap border-b-2 ${
-                                                statusFilter === key
-                                                    ? 'text-[var(--primary)] border-[var(--primary)]'
-                                                    : 'text-gray-500 hover:text-gray-700 border-transparent'
-                                            }`}
-                                        >
-                                            {label}
-                                            {key !== 'all' && ` (${logs.filter(l => {
-                                                if (key === 'holiday') return l.dayStatus === 'holiday'
-                                                if (key === 'on_leave') return l.dayStatus === 'on_leave'
-                                                if (key === 'week_off') return l.dayStatus === 'week_off'
-                                                if (key === 'not_clocked_in') return !l.dayStatus && !l.clock_in
-                                                if (key === 'active') return !l.dayStatus && !!l.clock_in && !l.clock_out
-                                                if (key === 'clocked_out') return !l.dayStatus && !!l.clock_in && !!l.clock_out
-                                                return false
-                                            }).length})`}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+                      </div>
                     </div>
 
                     {loading ? (
@@ -369,41 +345,44 @@ export default function AttendancePage() {
                             <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent" />
                         </div>
                     ) : (
-                        <div className="flex-1 min-h-0 overflow-y-auto max-w-5xl mx-auto w-full py-4">
-                            <div className="bg-white rounded-xl shadow-sm border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full w-full text-sm table-auto">
-                                        <thead className="bg-gray-50 border-b" style={{ borderColor: 'var(--border)' }}>
-                                            <tr>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight whitespace-nowrap">Employee</th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight whitespace-nowrap">Designation</th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight whitespace-nowrap">Department</th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight whitespace-nowrap">Clock In</th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight whitespace-nowrap">Clock Out</th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight whitespace-nowrap">Status</th>
+                        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar max-w-5xl mx-auto w-full py-4">
+                            <div
+                                className="overflow-hidden rounded-xl border border-slate-200 shadow-sm"
+                                style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}
+                            >
+                                <div className="overflow-x-auto admin-table-wrap">
+                                    <table className="min-w-full text-sm table-admin">
+                                        <thead>
+                                            <tr className="bg-[var(--primary-muted)]">
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">Employee</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">Designation</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">Department</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">Clock In</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">Clock Out</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">Status</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-200">
+                                        <tbody className="divide-y divide-slate-200">
                                             {filteredLogs.map(log => (
-                                                <tr key={log.id} className="hover:bg-gray-50/80 transition-colors">
-                                                    <td className="px-4 py-3 text-gray-900 font-medium whitespace-nowrap">{capitalizeName(log.profile?.full_name) || '—'}</td>
-                                                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{log.profile?.position || '—'}</td>
-                                                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{log.profile?.department || '—'}</td>
-                                                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{log.clock_in ? new Date(log.clock_in).toLocaleString() : '—'}</td>
-                                                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{log.clock_out ? new Date(log.clock_out).toLocaleString() : '—'}</td>
+                                                <tr key={log.id} className="transition-colors hover:bg-slate-50/80">
+                                                    <td className="px-4 py-3 text-slate-900 font-medium whitespace-nowrap">{capitalizeName(log.profile?.full_name) || '—'}</td>
+                                                    <td className="px-4 py-3 text-[var(--primary-hover)] font-medium whitespace-nowrap">{log.profile?.position || '—'}</td>
+                                                    <td className="px-4 py-3 text-[var(--primary-hover)] font-medium whitespace-nowrap">{log.profile?.department || '—'}</td>
+                                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-sm">{log.clock_in ? new Date(log.clock_in).toLocaleString() : '—'}</td>
+                                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-sm">{log.clock_out ? new Date(log.clock_out).toLocaleString() : '—'}</td>
                                                     <td className="px-4 py-3">
                                                         {log.dayStatus === 'holiday' ? (
-                                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">Holiday</span>
+                                                            <span className="badge-common px-2.5 py-1 rounded-md bg-purple-50 text-purple-500 border border-purple-200">Holiday</span>
                                                         ) : log.dayStatus === 'on_leave' ? (
-                                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">On Leave</span>
+                                                            <span className="badge-common px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 border border-amber-200">On Leave</span>
                                                         ) : log.dayStatus === 'week_off' ? (
-                                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">Week Off</span>
+                                                            <span className="badge-common px-2.5 py-1 rounded-md bg-slate-50 text-slate-400 border border-slate-200">Week Off</span>
                                                         ) : !log.clock_in ? (
-                                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-100 text-red-700 border border-red-200">Not Clocked In</span>
+                                                            <span className="badge-common badge-rejected">Not Clocked In</span>
                                                         ) : log.clock_out ? (
-                                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-teal-100 text-teal-800 border border-teal-200">Clocked Out</span>
+                                                            <span className="badge-common px-2.5 py-1 rounded-md bg-blue-50 text-blue-500 border border-blue-200">Clocked Out</span>
                                                         ) : (
-                                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">Active</span>
+                                                            <span className="badge-common badge-approved">Active</span>
                                                         )}
                                                     </td>
                                                 </tr>
@@ -412,8 +391,8 @@ export default function AttendancePage() {
                                     </table>
                                 </div>
                                 {filteredLogs.length === 0 && (
-                                    <div className="p-8 text-center">
-                                        <p className="text-sm text-gray-500">No attendance records found.</p>
+                                    <div className="p-10 text-center">
+                                        <p className="text-sm text-slate-500">No attendance records found.</p>
                                     </div>
                                 )}
                             </div>

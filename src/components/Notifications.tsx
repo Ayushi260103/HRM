@@ -98,7 +98,7 @@ export default function Notifications({ role, userId }: NotificationsProps) {
             }
           }
         }}
-        className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all"
+        className="relative p-2.5 text-[var(--primary)] hover:text-[var(--primary-hover)] hover:bg-[var(--primary-light)] rounded-full transition-all"
         title="Notifications"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -69,18 +69,44 @@ export function useUpcomingBirthdays(supabase: ReturnType<typeof import('@/lib/s
   return { birthdays, loading }
 }
 
-function BirthdayCard({ person, isTodayBirthday }: { person: BirthdayProfile; isTodayBirthday?: boolean }) {
+function BirthdayCard({ person, isTodayBirthday, variant }: { person: BirthdayProfile; isTodayBirthday?: boolean; variant: 'odd' | 'even' }) {
   return (
     <div
-      className={`aspect-square rounded-xl overflow-hidden transition-all duration-200 flex flex-col items-center justify-start p-4 ${
-        isTodayBirthday
-          ? 'bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/80 shadow-md shadow-rose-100/50'
-          : 'bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'
+      className={`aspect-square rounded-full overflow-hidden transition-all duration-200 flex flex-col items-center justify-start p-3 border shadow-md hover:shadow-lg ${
+        variant === 'odd'
+          ? 'bg-[var(--primary-hover)] border-[var(--primary)]'
+          : 'bg-[var(--primary-hover)] border-[var(--primary)]'
       }`}
     >
-      <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${isTodayBirthday ? 'text-rose-600' : 'text-slate-500'}`}>
-        {isTodayBirthday ? 'Happy birthday' : 'Birthday soon'}
-      </p>
+      <div className="mb-2 text-white/80">
+        {isTodayBirthday ? (
+          <svg className="birthday-arc" viewBox="0 0 160 70" aria-label="Happy Birthday">
+            <defs>
+              <path id="arc-top" d="M10,46 Q80,6 150,46" />
+              <path id="arc-bottom" d="M10,62 Q80,22 150,62" />
+            </defs>
+            <text dy="-2">
+              <textPath href="#arc-top" startOffset="50%" textAnchor="middle">Happy</textPath>
+            </text>
+            <text dy="2">
+              <textPath href="#arc-bottom" startOffset="50%" textAnchor="middle">Birthday</textPath>
+            </text>
+          </svg>
+        ) : (
+          <svg className="birthday-arc" viewBox="0 0 160 70" aria-label="Birthday Soon">
+            <defs>
+              <path id="arc-top-soon" d="M10,46 Q80,6 150,46" />
+              <path id="arc-bottom-soon" d="M10,62 Q80,22 150,62" />
+            </defs>
+            <text dy="-2">
+              <textPath href="#arc-top-soon" startOffset="50%" textAnchor="middle">Birthday</textPath>
+            </text>
+            <text dy="2">
+              <textPath href="#arc-bottom-soon" startOffset="50%" textAnchor="middle">Soon</textPath>
+            </text>
+          </svg>
+        )}
+      </div>
       <div className="flex-1 flex flex-col items-center justify-center min-h-0 w-full">
         {person.avatar_url ? (
           <Image
@@ -91,15 +117,15 @@ function BirthdayCard({ person, isTodayBirthday }: { person: BirthdayProfile; is
             className="w-20 h-20 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-md"
           />
         ) : (
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center text-2xl font-semibold text-rose-600 flex-shrink-0 ring-2 ring-white shadow-md">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-sky-200 to-blue-200 flex items-center justify-center text-2xl font-semibold text-blue-700 flex-shrink-0 ring-2 ring-white shadow-md">
             {person.full_name?.[0]?.toUpperCase()}
           </div>
         )}
-        <p className="font-semibold text-slate-900 text-sm mt-3 truncate w-full text-center">{capitalizeName(person.full_name)}</p>
-        <p className="text-xs text-slate-500 mt-0.5 truncate w-full text-center">{person.position || '—'}</p>
-        <p className="text-xs text-slate-500 mt-0.5 truncate w-full text-center">{person.department || '—'}</p>
-        <p className={`text-xs font-medium mt-2 ${isTodayBirthday ? 'text-rose-600' : 'text-slate-600'}`}>
-          🎂 {person.upcomingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        <p className="font-semibold text-white text-base mt-2.5 truncate w-full text-center">{capitalizeName(person.full_name)}</p>
+        <p className="text-sm text-white/80 mt-0.5 truncate w-full text-center">{person.position || '--'}</p>
+        <p className="text-sm text-white/80 mt-0.5 truncate w-full text-center">{person.department || '--'}</p>
+        <p className="text-sm font-medium mt-2 text-white/80">
+          {person.upcomingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </p>
       </div>
     </div>
@@ -120,8 +146,8 @@ export default function UpcomingBirthdays({ birthdays, loading }: { birthdays: B
 
   if (birthdays.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-10 sm:p-14 text-center">
-        <div className="text-5xl mb-4">🎂</div>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 sm:p-14 text-center">
+        <div className="text-5xl mb-4">??</div>
         <p className="text-slate-700 font-medium text-lg">No upcoming birthdays</p>
         <p className="text-slate-500 text-sm mt-1">No birthdays in the next 30 days</p>
       </div>
@@ -132,13 +158,12 @@ export default function UpcomingBirthdays({ birthdays, loading }: { birthdays: B
     <div className="space-y-8">
       {todayBirthdays.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-900 mt-10 mb-10 flex items-center gap-2">
             Birthday Today
           </h2>
-          <p className="text-slate-500 text-sm mb-4">Wish them a wonderful day!</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {todayBirthdays.map((person) => (
-              <BirthdayCard key={person.id} person={person} isTodayBirthday />
+            {todayBirthdays.map((person, index) => (
+              <BirthdayCard key={person.id} person={person} isTodayBirthday variant={index % 2 === 0 ? 'odd' : 'even'} />
             ))}
           </div>
         </div>
@@ -146,13 +171,13 @@ export default function UpcomingBirthdays({ birthdays, loading }: { birthdays: B
 
       {upcomingBirthdays.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
-            Upcoming Birthdays
+          <h2 className="text-lg font-bold text-slate-900 mt-10 mb-10 flex items-center gap-2 ">
+            Birthdays in next 30 days
           </h2>
-          <p className="text-slate-500 text-sm mb-4">Birthdays in the next 30 days</p>
+          {/* <p className="text-slate-500 text-sm mb-4">Birthdays in the next 30 days</p> */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {upcomingBirthdays.map((person) => (
-              <BirthdayCard key={person.id} person={person} />
+            {upcomingBirthdays.map((person, index) => (
+              <BirthdayCard key={person.id} person={person} variant={index % 2 === 0 ? 'odd' : 'even'} />
             ))}
           </div>
         </div>

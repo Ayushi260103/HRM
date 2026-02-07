@@ -11,8 +11,8 @@ export default function AdminLeavesHomePage() {
   }, [router])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <p className="text-gray-500">Redirecting to leave requests...</p>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
+      <p className="text-sm text-slate-500">Redirecting to leave requests...</p>
     </div>
   )
 }

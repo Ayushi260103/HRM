@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/hooks/useSupabase'
 import Sidebar from '@/components/Sidebar'
+import LeavesNav from '@/components/LeavesNav'
 
 type LeaveRequest = {
   id: string
@@ -233,14 +234,17 @@ export default function HRLeaveApplyPage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading leaves...</p></div>
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}>
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
 
       <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
         <div className="w-full max-w-5xl">
+          <div className="mb-4 rounded-xl p-2 bg-transparent" style={{ background: 'transparent' }}>
+            <LeavesNav basePath="/dashboard/hr/leaves" />
+          </div>
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Leave Management</h1>
-            <p className="text-gray-600 mt-2">Apply and track your leave requests</p>
+            <h1 className="text-xl font-bold text-gray-900">Apply and track your leave requests</h1>
+            {/* <p className="text-gray-600 mt-2">Apply and track your leave requests</p> */}
           </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

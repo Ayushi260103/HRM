@@ -21,7 +21,7 @@ const NAV_ITEMS = {
     { label: 'Profile', href: '/dashboard/admin/profile', icon: 'profile' as SidebarIconName },
   ],
   hr: [
-    { label: 'Dashboard', href: '/dashboard/hr', icon: 'dashboard' as SidebarIconName },
+    { label: 'Home', href: '/dashboard/hr/home', icon: 'dashboard' as SidebarIconName },
     { label: 'All Employees', href: '/dashboard/hr/employees', icon: 'employees' as SidebarIconName },
     { label: 'Attendance', href: '/dashboard/hr/attendance', icon: 'attendance' as SidebarIconName },
     { label: 'Leave Management', href: '/dashboard/hr/leaves', icon: 'leaves' as SidebarIconName },
@@ -70,33 +70,30 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
     <>
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-40 h-screen w-64 max-w-[85vw] bg-white border-r transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 z-40 h-screen w-64 max-w-[85vw] bg-white border-r transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 overflow-y-auto`}
         style={{ borderColor: 'var(--border)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)' }}
       >
         <div className="flex flex-col h-full">
           {/* Logo/Brand */}
-          <div className="p-6 border-b" style={{ borderColor: 'var(--border)' }}>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>HRM</h1>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Human Resource Management</p>
+          <div className="px-5 py-6 border-b" style={{ borderColor: 'var(--border)' }}>
+            <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>HRM</h1>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Human Resource Management</p>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1">
+          <nav className="flex-1 px-3 py-5 space-y-0.5">
             {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium ${
-                  isActive(item.href) ? 'font-semibold' : 'hover:bg-gray-100'
-                }`}
-                style={
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
                   isActive(item.href)
-                    ? { backgroundColor: 'var(--primary-light)', color: 'var(--primary)' }
-                    : { color: 'var(--text-primary)' }
-                }
+                    ? 'bg-[var(--primary-light)] text-[var(--primary)]'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--primary-light)]/60 hover:text-[var(--primary)]'
+                }`}
               >
                 <SidebarIcon name={item.icon} />
                 <span>{item.label}</span>
@@ -105,7 +102,7 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
           </nav>
 
           {/* User Profile Section */}
-          <div className="border-t p-4 space-y-4" style={{ borderColor: 'var(--border)' }}>
+          <div className="border-t px-4 py-4 space-y-4" style={{ borderColor: 'var(--border)' }}>
             {(userName || userEmail) && (
               <div className="flex items-center gap-3">
                 {avatarUrl ? (
@@ -132,8 +129,7 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
             )}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-red-50 hover:text-red-600"
-              style={{ color: 'var(--text-secondary)' }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors duration-150"
             >
               <IconLogout />
               <span>Log out</span>
@@ -145,8 +141,8 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
       {/* Mobile Menu Button - safe area for notched devices */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed left-4 top-4 z-50 lg:hidden p-2.5 rounded-lg bg-white border text-gray-600 hover:bg-gray-50 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
-        style={{ top: 'max(1rem, env(safe-area-inset-top))', left: 'max(1rem, env(safe-area-inset-left))', borderColor: 'var(--border)' }}
+        className="fixed z-50 lg:hidden p-2.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm transition-colors duration-150"
+        style={{ top: 'max(1rem, env(safe-area-inset-top))', left: 'max(1rem, env(safe-area-inset-left))' }}
         aria-label={isOpen ? 'Close menu' : 'Open menu'}
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

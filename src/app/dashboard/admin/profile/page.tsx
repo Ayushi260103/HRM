@@ -212,14 +212,14 @@ export default function AdminProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-slate-500">Loading profile...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
+        <p className="text-sm text-slate-500">Loading profile...</p>
       </div>
     );
   }
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4" style={{ background: 'var(--background)' }}>
         <p className="text-red-600 text-center">Error: {error}</p>
         <div className="flex gap-4">
           {profile && (
@@ -232,7 +232,7 @@ export default function AdminProfilePage() {
           )}
           <Link
             href="/dashboard/admin/home"
-            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+            className="px-4 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium transition-colors"
           >
             Back to Home
           </Link>
@@ -242,7 +242,7 @@ export default function AdminProfilePage() {
   }
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
         <p className="text-slate-500">Profile not found</p>
       </div>
     );
@@ -252,7 +252,7 @@ export default function AdminProfilePage() {
   const joiningDate = profile.joining_date ? formatDate(profile.joining_date) : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
       <Sidebar userEmail={email} userName={profile.full_name} avatarUrl={profile.avatar_url} role="admin" />
 
       <main className="admin-main">
@@ -266,7 +266,7 @@ export default function AdminProfilePage() {
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="px-4 py-2 rounded-lg font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50"
                   >
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -281,7 +281,7 @@ export default function AdminProfilePage() {
               ) : (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 rounded-lg font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
+                  className="px-4 py-2 rounded-lg font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] transition-colors"
                 >
                   Edit Profile
                 </button>
@@ -308,14 +308,14 @@ export default function AdminProfilePage() {
                     className="w-24 h-24 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <span className="text-indigo-600 text-2xl font-bold">
+                  <div className="w-24 h-24 rounded-full bg-[var(--primary-light)] flex items-center justify-center">
+                    <span className="text-[var(--primary)] text-2xl font-bold">
                       {profile.full_name?.[0]?.toUpperCase() ?? '?'}
                     </span>
                   </div>
                 )}
                 <label className="mt-2 block">
-                  <span className="inline-block text-xs font-medium text-indigo-600 hover:text-indigo-700 cursor-pointer">
+                  <span className="inline-block text-xs font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] cursor-pointer">
                     {uploading ? 'Uploading...' : 'Change photo'}
                   </span>
                   <input
@@ -368,7 +368,7 @@ export default function AdminProfilePage() {
                       type="date"
                       value={toDateInput(editData.dob)}
                       onChange={e => setEditData(prev => prev ? { ...prev, dob: e.target.value } : prev)}
-                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
                     />
                   ) : (
                     (profile.dob && formatDate(profile.dob)) ?? '—'
@@ -382,12 +382,11 @@ export default function AdminProfilePage() {
                     <select
                       value={editData.gender ?? ''}
                       onChange={e => setEditData(prev => prev ? { ...prev, gender: e.target.value || null } : prev)}
-                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
                     >
                       <option value="">—</option>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
-                      <option value="other">Other</option>
                     </select>
                   ) : (
                     profile.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1).toLowerCase() : '—'
@@ -401,7 +400,7 @@ export default function AdminProfilePage() {
                     <select
                       value={editData.marital_status ?? ''}
                       onChange={e => setEditData(prev => prev ? { ...prev, marital_status: e.target.value || null } : prev)}
-                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
                     >
                       <option value="">—</option>
                       <option value="yes">Yes</option>
@@ -421,7 +420,7 @@ export default function AdminProfilePage() {
                       value={editData.address ?? ''}
                       onChange={e => setEditData(prev => prev ? { ...prev, address: e.target.value } : prev)}
                       placeholder="—"
-                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
                     />
                   ) : (
                     (emptyValue(profile.address) || '—') as string
@@ -441,7 +440,7 @@ export default function AdminProfilePage() {
                       type="text"
                       value={editData.department ?? ''}
                       onChange={e => setEditData(prev => prev ? { ...prev, department: e.target.value } : prev)}
-                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
                     />
                   ) : (
                     profile.department || '—'
@@ -456,7 +455,7 @@ export default function AdminProfilePage() {
                       type="text"
                       value={editData.position ?? ''}
                       onChange={e => setEditData(prev => prev ? { ...prev, position: e.target.value } : prev)}
-                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
                     />
                   ) : (
                     profile.position || '—'
@@ -471,7 +470,7 @@ export default function AdminProfilePage() {
                       type="date"
                       value={toDateInput(editData.joining_date)}
                       onChange={e => setEditData(prev => prev ? { ...prev, joining_date: e.target.value } : prev)}
-                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
                     />
                   ) : (
                     joiningDate ?? '—'
@@ -490,7 +489,7 @@ export default function AdminProfilePage() {
                           prev ? { ...prev, years_of_experience: parseInt(e.target.value, 10) || 0 } : prev
                         )
                       }
-                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
                     />
                   ) : (
                     (profile.years_of_experience != null ? String(profile.years_of_experience) : null) ?? '—'
@@ -511,7 +510,7 @@ export default function AdminProfilePage() {
                         setEditData(prev => prev ? { ...prev, salary: val === '' ? null : parseFloat(val) || 0 } : prev);
                       }}
                       placeholder="—"
-                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
                     />
                   ) : (
                     formatCurrency(profile.salary)
@@ -531,7 +530,7 @@ export default function AdminProfilePage() {
                       onChange={e => setEditData(prev => prev ? { ...prev, education: e.target.value } : prev)}
                       placeholder="Enter your highest education"
                       rows={3}
-                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-y"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none resize-y"
                     />
                   ) : (
                     (emptyValue(profile.education) || '—') as string

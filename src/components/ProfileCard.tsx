@@ -4,6 +4,7 @@ interface ProfileCardProps {
   title: string
   children: React.ReactNode
   onEdit?: () => void
+  className?: string
 }
 
 function ProfileField({ label, value, children }: { label: string; value?: React.ReactNode; children?: React.ReactNode }) {
@@ -13,7 +14,7 @@ function ProfileField({ label, value, children }: { label: string; value?: React
   const isCustomNode = typeof display !== 'string'
   return (
     <div className="flex justify-between items-start gap-4 py-3 border-b border-slate-100 last:border-0">
-      <span className="text-slate-500 text-sm shrink-0">{label}</span>
+      <span className="text-[var(--primary-hover)] text-sm font-medium shrink-0">{label}</span>
       <div
         className={`text-sm text-right min-w-0 ${isCustomNode ? '' : isStringPlaceholder ? 'text-slate-400 italic' : 'text-slate-900 font-medium'}`}
       >
@@ -23,16 +24,16 @@ function ProfileField({ label, value, children }: { label: string; value?: React
   )
 }
 
-export function ProfileCard({ title, children, onEdit }: ProfileCardProps) {
+export function ProfileCard({ title, children, onEdit, className }: ProfileCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+    <div className={`card p-6 ${className ?? ''}`.trim()}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-slate-900 font-semibold">{title}</h3>
+        <h3 className="text-slate-900 font-semibold text-sm">{title}</h3>
         {onEdit && (
           <button
             type="button"
             onClick={onEdit}
-            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--primary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-hover)] transition-colors"
             aria-label={`Edit ${title}`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

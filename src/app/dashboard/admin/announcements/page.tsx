@@ -49,18 +49,27 @@ export default function AdminAnnouncementsPage() {
     loadData()
   }, [router, supabase])
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}><p style={{ color: 'var(--text-secondary)' }}>Loading announcements...</p></div>
-  if (!userId || !role) return <div className="p-6" style={{ color: 'var(--text-secondary)' }}>Redirecting...</div>
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}>
+      <p className="text-sm text-slate-500">Loading announcements...</p>
+    </div>
+  )
+  if (!userId || !role) return <div className="p-6 text-slate-500">Redirecting...</div>
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}
+    >
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
 
       <main className="admin-main">
         <div className="w-full max-w-4xl">
-          <PageHeader title="Announcements" subtitle="Post updates for everyone and view all announcements" />
+          <div className="card card-body mb-6 bg-transparent border-transparent shadow-none" style={{ background: 'transparent' }}>
+            <PageHeader title="Announcements" subtitle="Post updates for everyone and view all announcements" />
+          </div>
 
-          <AnnouncementsPanel userId={userId} userName={userName || email || 'User'} userRole={role} />
+          <AnnouncementsPanel userId={userId} userName={userName || email || 'User'} userRole={role} userAvatarUrl={avatarUrl} />
         </div>
       </main>
     </div>

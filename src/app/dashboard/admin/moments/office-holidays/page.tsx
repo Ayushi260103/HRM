@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
-import Notifications from '@/components/Notifications'
 import { useSupabase } from '@/hooks/useSupabase'
 import { getDateString } from '@/lib/utils/date'
 
@@ -65,7 +64,7 @@ function MonthCalendar({
   const selectedHolidays = selectedDate ? holidaysByDate.get(selectedDate) : null
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+    <div className="bg-[var(--primary-light)]/60 rounded-2xl border border-[var(--primary-muted)] p-4 shadow-sm hover:shadow-md transition-shadow">
       <h3 className="text-center font-semibold text-slate-900 mb-3">{monthLabel}</h3>
       <div className="grid grid-cols-7 gap-1 text-center">
         {WEEKDAYS.map((w) => (
@@ -85,8 +84,8 @@ function MonthCalendar({
               className={`
                 min-h-[36px] rounded-md text-sm transition-colors
                 ${!isCurrentMonth ? 'text-slate-300' : 'text-slate-900'}
-                ${isHoliday ? 'bg-amber-100 hover:bg-amber-200 font-medium' : 'hover:bg-slate-100'}
-                ${isSelected ? 'ring-2 ring-indigo-500 ring-offset-1' : ''}
+                ${isHoliday ? 'bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] font-medium' : 'hover:bg-[var(--primary-light)]'}
+                ${isSelected ? 'ring-2 ring-[var(--primary)] ring-offset-1' : ''}
               `}
             >
               {date.getDate()}
@@ -95,7 +94,7 @@ function MonthCalendar({
         })}
       </div>
       {selectedHolidays && selectedHolidays.length > 0 && (
-        <p className="mt-3 text-center text-sm font-medium text-amber-800">
+        <p className="mt-3 text-center text-sm font-medium text-blue-700">
           {selectedHolidays.join(', ')}
         </p>
       )}
@@ -177,8 +176,11 @@ export default function AdminOfficeHolidaysPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Loading...</p>
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}
+      >
+        <p className="text-slate-500">Loading...</p>
       </div>
     )
   }
@@ -191,22 +193,22 @@ export default function AdminOfficeHolidaysPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}
+    >
       <Sidebar userEmail={user.email} userName={user.userName} avatarUrl={user.avatarUrl} role="admin" />
-
-      <div className="admin-notifications-fixed">
-        {user.userId && <Notifications role="admin" userId={user.userId} />}
-      </div>
 
       <main className="admin-main">
         <div className="max-w-4xl">
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Upcoming Holidays</h1>
+          <div className="mt-10 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="rounded-2xl border border-transparent bg-transparent px-0 py-0 shadow-none">
+              <h1 className="text-xl font-bold text-slate-900">Holidays at a glance for the next four months</h1>
+              {/* <p className="text-sm text-slate-500 mt-1">Next four months at a glance</p> */}
             </div>
             <Link
               href="/dashboard/admin/moments"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:border-slate-300 shrink-0"
+              className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] shadow-sm transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-light)] shrink-0"
             >
               View upcoming birthday
             </Link>

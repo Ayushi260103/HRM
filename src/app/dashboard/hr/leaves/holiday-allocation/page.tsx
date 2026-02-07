@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/hooks/useSupabase'
 import Sidebar from '@/components/Sidebar'
+import LeavesNav from '@/components/LeavesNav'
 
 type Holiday = {
   id: string
@@ -13,7 +13,7 @@ type Holiday = {
   created_at: string
 }
 
-export default function HRHolidayAllocationPage() {
+export default function AdminHolidayAllocationPage() {
   const router = useRouter()
   const supabase = useSupabase()
   const [holidays, setHolidays] = useState<Holiday[]>([])
@@ -26,6 +26,11 @@ export default function HRHolidayAllocationPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editDate, setEditDate] = useState('')
+  const [editName, setEditName] = useState('')
+  const [savingEditId, setSavingEditId] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -72,6 +77,19 @@ export default function HRHolidayAllocationPage() {
       setError('Please enter date and name')
       return
     }
+    const existing = holidays.find(h => h.date === newDate)
+    if (existing) {
+      const wantEdit = window.confirm('A holiday already exists for this date. Would you like to edit it?')
+      if (wantEdit) {
+        setShowAddForm(false)
+        setNewDate('')
+        setNewName('')
+        setEditingId(existing.id)
+        setEditDate(existing.date)
+        setEditName(existing.name)
+      }
+      return
+    }
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     const { error: insertErr } = await supabase
@@ -88,8 +106,47 @@ export default function HRHolidayAllocationPage() {
     }
     setNewDate('')
     setNewName('')
+    setShowAddForm(false)
     const { data } = await supabase.from('office_holidays').select('id, date, name, created_at').order('date', { ascending: true })
     setHolidays(data ?? [])
+  }
+
+  const startEdit = (h: Holiday) => {
+    setEditingId(h.id)
+    setEditDate(h.date)
+    setEditName(h.name)
+    setError(null)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditDate('')
+    setEditName('')
+  }
+
+  const handleSaveEdit = async (id: string) => {
+    if (!editDate.trim() || !editName.trim()) {
+      setError('Date and name are required')
+      return
+    }
+    const otherWithSameDate = holidays.find(h => h.id !== id && h.date === editDate)
+    if (otherWithSameDate) {
+      setError('Another holiday already exists for this date.')
+      return
+    }
+    setSavingEditId(id)
+    setError(null)
+    const { error: updateErr } = await supabase
+      .from('office_holidays')
+      .update({ date: editDate, name: editName.trim() })
+      .eq('id', id)
+    setSavingEditId(null)
+    if (updateErr) {
+      setError(updateErr.message)
+      return
+    }
+    setHolidays(prev => prev.map(h => h.id === id ? { ...h, date: editDate, name: editName.trim() } : h))
+    cancelEdit()
   }
 
   const handleDelete = async (id: string) => {
@@ -99,88 +156,175 @@ export default function HRHolidayAllocationPage() {
     setDeletingId(null)
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}
+    >
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
-      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
-        <div className="max-w-4xl">
-          <Link href="/dashboard/hr/leaves" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
-            ← Back to Leave Management
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Holiday Allocation</h1>
-          <p className="text-gray-600 mt-1">Mark dates when the office is closed. These apply to everyone.</p>
+      <main className="admin-main">
+        <LeavesNav basePath="/dashboard/hr/leaves" />
+        <div className="max-w-4xl -ml-2">
+          <h1 className="text-xl font-bold text-gray-900 text-left">Mark office-wide holidays that apply to all employees</h1>
+        </div>
+        <div className="max-w-4xl mx-auto">
 
+          {loading ? (
+            <div className="py-12 flex justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            </div>
+          ) : (
+            <>
           {error && (
             <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>
           )}
 
-          <form onSubmit={handleAdd} className="mt-6 p-4 bg-white rounded-xl border border-gray-200 flex flex-wrap items-end gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-              <input
-                type="date"
-                value={newDate}
-                onChange={e => setNewDate(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2"
-                required
-              />
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input
-                type="text"
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                placeholder="e.g. Diwali, Christmas"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                required
-              />
-            </div>
-            <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
-              {saving ? 'Adding...' : 'Add Holiday'}
-            </button>
-          </form>
+          <div className="mt-6">
+            {!showAddForm ? (
+              <button
+                type="button"
+                onClick={() => setShowAddForm(true)}
+                className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] shadow-sm"
+              >
+                Add holiday
+              </button>
+            ) : (
+              <form onSubmit={handleAdd} className="p-4 rounded-xl border border-[var(--primary-muted)] bg-white/80 shadow-sm flex flex-wrap items-end gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={newDate}
+                    onChange={e => setNewDate(e.target.value)}
+                    className="border border-[var(--border)] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none"
+                    required
+                  />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    placeholder="e.g. Diwali, Christmas"
+                    className="w-full border border-[var(--border)] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none"
+                    required
+                  />
+                </div>
+                <button type="submit" disabled={saving} className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50">
+                  {saving ? 'Adding...' : 'Add Holiday'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowAddForm(false); setNewDate(''); setNewName(''); }}
+                  className="px-4 py-2 bg-white border border-[var(--border)] rounded-lg font-medium text-gray-700 hover:bg-[var(--primary-light)]/60"
+                >
+                  Cancel
+                </button>
+              </form>
+            )}
+          </div>
 
-          <div className="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="mt-6 bg-white/80 rounded-xl border border-[var(--primary-muted)] shadow-sm overflow-hidden admin-table-wrap">
+            <div className="overflow-x-auto max-h-[65vh] overflow-y-auto no-scrollbar">
+              <table className="min-w-full divide-y divide-[var(--primary-muted)]">
+                <thead className="bg-[var(--primary-muted)] sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Name</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Action</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-primary)] uppercase">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-primary)] uppercase">Name</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-[var(--text-primary)] uppercase">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-[var(--primary-muted)]">
                 {holidays.map(h => (
-                  <tr key={h.id}>
-                    <td className="px-4 py-3 text-sm text-gray-900">{new Date(h.date).toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{h.name}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(h.id)}
-                        disabled={deletingId === h.id}
-                        className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50"
-                      >
-                        {deletingId === h.id ? 'Removing...' : 'Remove'}
-                      </button>
-                    </td>
+                  <tr key={h.id} className="odd:bg-white even:bg-[var(--primary-light)]/40">
+                    {editingId === h.id ? (
+                      <>
+                        <td className="px-4 py-3">
+                          <input
+                            type="date"
+                            value={editDate}
+                            onChange={e => setEditDate(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:border-[var(--primary-hover)] focus:ring-2 focus:ring-[var(--primary-hover)]/30 outline-none"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={e => setEditName(e.target.value)}
+                            placeholder="Holiday name"
+                            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm w-full max-w-xs focus:border-[var(--primary-hover)] focus:ring-2 focus:ring-[var(--primary-hover)]/30 outline-none"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveEdit(h.id)}
+                            disabled={savingEditId === h.id}
+                            className="text-blue-600 hover:text-blue-700 text-sm font-medium mr-2 disabled:opacity-50"
+                          >
+                            {savingEditId === h.id ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEdit}
+                            className="text-gray-600 hover:text-gray-800 text-sm font-medium mr-2"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(h.id)}
+                            disabled={deletingId === h.id}
+                            className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50"
+                          >
+                            {deletingId === h.id ? 'Removing...' : 'Remove'}
+                          </button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-4 py-3 text-sm text-gray-900">{new Date(h.date).toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{h.name}</td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(h)}
+                            className="inline-flex items-center justify-center text-[var(--primary)] hover:text-[var(--primary-hover)] mr-2"
+                            aria-label="Edit holiday"
+                            title="Edit"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(h.id)}
+                            disabled={deletingId === h.id}
+                            className="inline-flex items-center justify-center text-red-600 hover:text-red-700 disabled:opacity-50"
+                            aria-label="Remove holiday"
+                            title="Remove"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4" />
+                            </svg>
+                          </button>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
             {holidays.length === 0 && (
               <div className="p-8 text-center text-gray-500 text-sm">No holidays added yet. Add a date above.</div>
             )}
           </div>
+            </>
+          )}
         </div>
       </main>
     </div>

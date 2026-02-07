@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSupabase } from './useSupabase'
-import { getLocalDayRange, getLocalDateString, getLocalDayOfWeek, formatTime, getEndOfDayISO } from '@/lib/utils/date'
+import { getLocalDayRange, getLocalDateString, getLocalDayOfWeek, formatTime} from '@/lib/utils/date'
 
 export function useAttendance(userId: string | null) {
   const supabase = useSupabase()
@@ -52,23 +52,6 @@ export function useAttendance(userId: string | null) {
 
     const { startISO, endISO } = getLocalDayRange()
 
-    // Auto clock-out any open log from a previous day (forgot to clock out)
-    const { data: staleLogs } = await supabase
-      .from('attendance_logs')
-      .select('id, clock_in')
-      .eq('user_id', userId)
-      .is('clock_out', null)
-      .lt('clock_in', startISO)
-      .order('clock_in', { ascending: false })
-    if (staleLogs?.length) {
-      for (const log of staleLogs) {
-        const clockOutMidnight = getEndOfDayISO(log.clock_in, false)
-        await supabase
-          .from('attendance_logs')
-          .update({ clock_out: clockOutMidnight })
-          .eq('id', log.id)
-      }
-    }
 
     const { data } = await supabase
       .from('attendance_logs')

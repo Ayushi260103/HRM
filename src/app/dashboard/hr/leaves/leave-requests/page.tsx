@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/hooks/useSupabase'
+import { capitalizeName } from '@/lib/utils/string'
 import Sidebar from '@/components/Sidebar'
+import LeavesNav from '@/components/LeavesNav'
 
 type LeaveRequest = {
   id: string
@@ -25,7 +27,6 @@ type LeaveRequest = {
     role?: string | null
   } | null
 }
-type FilterType = 'all' | 'pending' | 'approved' | 'rejected'
 
 export default function HRLeavesPage() {
   const router = useRouter()
@@ -37,6 +38,7 @@ export default function HRLeavesPage() {
   
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([])
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
+  const [nameSearch, setNameSearch] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [commentData, setCommentData] = useState<Record<string, string>>({})
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({})
@@ -210,200 +212,236 @@ export default function HRLeavesPage() {
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'bg-green-50 text-green-700 border-green-200'
+        return 'badge-common badge-approved'
       case 'rejected':
-        return 'bg-red-50 text-red-700 border-red-200'
+        return 'badge-common badge-rejected'
       case 'pending':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200'
+        return 'badge-common badge-pending'
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200'
+        return 'badge-common'
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return '✅'
-      case 'rejected':
-        return '❌'
-      case 'pending':
-        return '⏳'
-      default:
-        return '📋'
-    }
-  }
+  const filteredRequests = leaveRequests.filter(r => {
+    const statusMatch = filter === 'all' ? true : r.status === filter
+    const nameMatch = !nameSearch.trim() || (r.profile?.full_name?.toLowerCase().includes(nameSearch.trim().toLowerCase()) ?? false)
+    return statusMatch && nameMatch
+  })
 
-  const filteredRequests = leaveRequests.filter(r => 
-    filter === 'all' ? true : r.status === filter
-  )
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading leaves...</p></div>
+  const selectedRequest = expandedId ? leaveRequests.find(r => r.id === expandedId) : null
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div
+      className="h-screen flex flex-col overflow-hidden"
+      style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}
+    >
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
 
-      <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
-        <div className="w-full max-w-6xl">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Leave Management</h1>
-            <p className="text-gray-600 mt-2">Review and approve/reject employee leave requests</p>
+      <main className="admin-main flex flex-col min-h-0">
+        <div className="w-full max-w-6xl flex flex-col flex-1 min-h-0">
+          <div className="shrink-0">
+            <LeavesNav basePath="/dashboard/hr/leaves" />
           </div>
+          <div className="page-header shrink-0"></div>
 
-          {/* Filter Tabs */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 p-4">
-            <div className="flex flex-wrap gap-2">
-              {['all', 'pending', 'approved', 'rejected'].map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f as FilterType)}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                    filter === f
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {f === 'all' ? '📋 All' : f === 'pending' ? '⏳ Pending' : f === 'approved' ? '✅ Approved' : '❌ Rejected'}
-                  {f !== 'all' && ` (${leaveRequests.filter(r => r.status === f).length})`}
-                </button>
-              ))}
+          {loading ? (
+            <div className="py-12 flex justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent" />
+            </div>
+          ) : (
+            <>
+          {/* Status filter bar */}
+          <div className="max-w-2xl mx-auto w-full shrink-0 sticky top-0 z-10 py-2">
+            <div className="card px-4 py-2.5 bg-transparent border-transparent shadow-[0_8px_20px_-12px_rgba(59,130,246,0.65)]" style={{ background: 'transparent' }}>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                <span className="text-xs font-semibold text-slate-600 shrink-0">Status:</span>
+                <div className="flex items-center gap-3 shrink-0">
+                  {(['all', 'pending', 'approved', 'rejected'] as const).map(f => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setFilter(f)}
+                      className={`pb-0.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                        filter === f
+                          ? 'text-[var(--primary)] border-b-2 border-[var(--primary)]'
+                          : 'text-slate-500 hover:text-slate-700 border-b-2 border-transparent'
+                      }`}
+                    >
+                      {f === 'all' ? 'All' : f === 'pending' ? 'Pending' : f === 'approved' ? 'Approved' : 'Rejected'}
+                    </button>
+                  ))}
+                </div>
+                <div className="h-4 w-px bg-slate-200 shrink-0" aria-hidden />
+                <label className="relative flex items-center shrink-0 w-full sm:w-auto sm:ml-auto">
+                  <input
+                    type="text"
+                    value={nameSearch}
+                    onChange={(e) => setNameSearch(e.target.value)}
+                    placeholder="Search by name"
+                    className="input-base pl-4 pr-4 py-2 rounded-full w-full sm:w-60 text-sm bg-white border border-[var(--border)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
+                  />
+                </label>
+              </div>
             </div>
           </div>
 
-          {/* Leave Requests List */}
-          <div className="space-y-4">
-            {filteredRequests.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                <p className="text-gray-500 text-lg">No {filter === 'all' ? 'leave requests' : filter + ' leave requests'}</p>
-              </div>
-            ) : (
-              filteredRequests.map(request => (
-                <div key={request.id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all">
-                  <div 
-                    className="p-6 cursor-pointer"
-                    onClick={() => setExpandedId(expandedId === request.id ? null : request.id)}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-gray-900">
-                            {request.profile?.full_name || 'Unknown Employee'}
-                          </h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(request.status)}`}>
-                            {getStatusIcon(request.status)} {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                          </span>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium">{request.leave_type?.name || 'Leave'}</span>
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            📅 {new Date(request.start_date).toLocaleDateString()} to {new Date(request.end_date).toLocaleDateString()}
-                          </p>
-                          <p className="text-sm text-gray-600 line-clamp-2">{request.reason}</p>
-                        </div>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <svg 
-                          className={`w-5 h-5 text-gray-400 transition-transform ${expandedId === request.id ? 'rotate-180' : ''}`}
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                        </svg>
-                      </div>
-                    </div>
+          {/* Portrait detail card overlay - over all requests when one is selected */}
+          {selectedRequest && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-[2px]"
+              style={{ perspective: '1000px' }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Leave request details"
+            >
+              <button
+                type="button"
+                onClick={() => setExpandedId(null)}
+                className="absolute inset-0"
+                aria-label="Close overlay"
+              />
+              <div
+                className="relative z-10 mx-auto rounded-2xl border border-[var(--border)] bg-white shadow-xl w-fit max-w-[90vw] min-w-[400px]"
+                style={{ boxShadow: '0 25px 50px -12px rgba(15,23,42,0.15)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(null)}
+                  className="absolute top-3 right-3 z-10 p-1.5 rounded-lg text-slate-500 hover:bg-[var(--primary-light)] hover:text-[var(--primary)] transition-colors"
+                  aria-label="Close"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                <div className="p-6 pt-10 flex flex-col gap-3">
+                  <div className="text-center border-b border-slate-200 pb-3">
+                    <p className="text-sm font-medium text-slate-900">{capitalizeName(selectedRequest.profile?.full_name) || 'Unknown Employee'}</p>
+                    <span className={`inline-block mt-1.5 ${getStatusBadgeClass(selectedRequest.status)}`}>{selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}</span>
                   </div>
-
-                  {/* Expanded Details */}
-                  {expandedId === request.id && (
-                    <div className="border-t border-gray-200 p-6 bg-gray-50">
-                      <div className="space-y-4">
-                        {/* Request Details */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Employee Email</p>
-                            <p className="text-sm text-gray-900">{request.profile?.email_id || '—'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Leave Type</p>
-                            <p className="text-sm text-gray-900">{request.leave_type?.name || 'Leave'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Date Range</p>
-                            <p className="text-sm text-gray-900">{new Date(request.start_date).toLocaleDateString()} - {new Date(request.end_date).toLocaleDateString()}</p>
-                          </div>
-                          {request.half_day_part && (
-                            <div>
-                              <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Half Day</p>
-                              <p className="text-sm text-gray-900">{request.half_day_part === 'first' ? 'First Half' : 'Second Half'}</p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Requested On</p>
-                            <p className="text-sm text-gray-900">{new Date(request.created_at).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-
-                        {/* Reason */}
-                        <div>
-                          <p className="text-xs font-semibold text-gray-600 uppercase mb-2">Reason</p>
-                          <p className="text-sm text-gray-900 bg-white rounded p-3 border border-gray-200">{request.reason}</p>
-                        </div>
-
-                        {/* Existing Comment */}
-                        {request.comment && (
-                          <div>
-                            <p className="text-xs font-semibold text-gray-600 uppercase mb-2">Admin Comment</p>
-                            <p className="text-sm text-gray-900 bg-white rounded p-3 border border-gray-200">{request.comment}</p>
-                          </div>
-                        )}
-
-                        {/* Only show action buttons if pending */}
-                        {request.status === 'pending' && (
-                          <>
-                            {/* Comment Field */}
-                            <div>
-                              <label className="text-xs font-semibold text-gray-600 uppercase mb-2 block">Add Comment (Optional)</label>
-                              <textarea
-                                value={commentData[request.id] || ''}
-                                onChange={(e) => setCommentData(prev => ({ ...prev, [request.id]: e.target.value }))}
-                                placeholder="Add any comments or reason for your decision..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                                rows={3}
-                              ></textarea>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex gap-3 pt-2">
-                              <button
-                                onClick={() => handleApprove(request.id)}
-                                disabled={actionLoading[request.id]}
-                                className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-50"
-                              >
-                                {actionLoading[request.id] ? '⏳' : '✅'} Approve
-                              </button>
-                              <button
-                                onClick={() => handleReject(request.id)}
-                                disabled={actionLoading[request.id]}
-                                className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition-all disabled:opacity-50"
-                              >
-                                {actionLoading[request.id] ? '⏳' : '❌'} Reject
-                              </button>
-                            </div>
-                          </>
-                        )}
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs font-semibold uppercase text-slate-500 shrink-0">Email</span>
+                    <span className="text-sm text-slate-900 text-right break-all">{selectedRequest.profile?.email_id || 'â€”'}</span>
+                  </div>
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs font-semibold uppercase text-slate-500 shrink-0">Leave type</span>
+                    <span className="text-sm text-slate-900 text-right">{selectedRequest.leave_type?.name || 'Leave'}</span>
+                  </div>
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs font-semibold uppercase text-slate-500 shrink-0">Date range</span>
+                    <span className="text-sm text-slate-900 text-right">{new Date(selectedRequest.start_date).toLocaleDateString()} â€“ {new Date(selectedRequest.end_date).toLocaleDateString()}</span>
+                  </div>
+                  {selectedRequest.half_day_part && (
+                    <div className="flex justify-between items-center gap-4">
+                      <span className="text-xs font-semibold uppercase text-slate-500 shrink-0">Half day</span>
+                      <span className="text-sm text-slate-900 text-right">{selectedRequest.half_day_part === 'first' ? 'First half' : 'Second half'}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs font-semibold uppercase text-slate-500 shrink-0">Requested on</span>
+                    <span className="text-sm text-slate-900 text-right">{new Date(selectedRequest.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div className="pt-1">
+                    <p className="text-xs font-semibold uppercase text-slate-500 mb-1">Reason</p>
+                    <p className="text-sm text-slate-700 rounded-lg p-3 border border-slate-200 bg-slate-50">{selectedRequest.reason}</p>
+                  </div>
+                  {selectedRequest.comment && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-slate-500 mb-1">Admin comment</p>
+                      <p className="text-sm text-slate-700 rounded-lg p-3 border border-slate-200 bg-slate-50">{selectedRequest.comment}</p>
+                    </div>
+                  )}
+                  {selectedRequest.status === 'pending' && (
+                    <div className="pt-3 space-y-2 border-t border-slate-200">
+                      <p className="text-xs font-semibold uppercase text-slate-500">Add comment (optional)</p>
+                      <textarea
+                        value={commentData[selectedRequest.id] || ''}
+                        onChange={(e) => setCommentData(prev => ({ ...prev, [selectedRequest.id]: e.target.value }))}
+                        placeholder="Comment or reason for decision..."
+                        className="input-base w-full resize-none"
+                        rows={2}
+                      />
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleApprove(selectedRequest.id)}
+                          disabled={actionLoading[selectedRequest.id]}
+                          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]"
+                        >
+                          {actionLoading[selectedRequest.id] ? 'Approvingâ€¦' : 'Approve'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleReject(selectedRequest.id)}
+                          disabled={actionLoading[selectedRequest.id]}
+                          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        >
+                          {actionLoading[selectedRequest.id] ? 'Rejectingâ€¦' : 'Reject'}
+                        </button>
                       </div>
                     </div>
                   )}
                 </div>
-              ))
-            )}
+              </div>
+            </div>
+          )}
+
+          {/* Leave requests table */}
+          <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar max-w-4xl mx-auto w-full py-4">
+            <div
+              className="overflow-hidden rounded-xl border border-slate-200 shadow-md border-l-[3px] border-l-[var(--primary-hover)] border-r-[3px] border-r-[var(--primary-hover)]"
+              style={{ backgroundImage: 'linear-gradient(45deg, #ffffff 0%, var(--primary-light) 75%)' }}
+            >
+              <div className="overflow-x-auto admin-table-wrap">
+                <table className="min-w-full text-sm divide-y divide-slate-200 table-admin">
+                  <thead>
+                    <tr className="bg-[var(--primary-muted)]">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider ">Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider ">Email</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider ">Applied</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider ">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRequests.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-500">
+                          No {filter === 'all' ? 'leave requests' : filter + ' requests'} found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredRequests.map(request => (
+                        <tr
+                          key={request.id}
+                          onClick={() => setExpandedId(expandedId === request.id ? null : request.id)}
+                          className={`cursor-pointer transition-colors hover:bg-[var(--primary-light)]/60 ${expandedId === request.id ? 'bg-[var(--primary-light)]/70' : ''}`}
+                        >
+                          <td className="px-4 py-3 text-sm font-medium text-slate-900 whitespace-nowrap">
+                            {capitalizeName(request.profile?.full_name) || 'â€”'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-[var(--primary-hover)] font-medium max-w-[160px] truncate" title={request.profile?.email_id || undefined}>
+                            {request.profile?.email_id || 'â€”'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
+                            {new Date(request.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-4 py-3 text-left whitespace-nowrap">
+                            <span className={`badge-common ${getStatusBadgeClass(request.status)}`}>
+                              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
+            </>
+          )}
         </div>
       </main>
     </div>

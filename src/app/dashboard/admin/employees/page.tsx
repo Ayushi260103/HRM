@@ -7,7 +7,6 @@ import Image from 'next/image';
 import { capitalizeName } from '@/lib/utils/string';
 import Sidebar from '@/components/Sidebar';
 import PageHeader from '@/components/PageHeader';
-import Notifications from '@/components/Notifications';
 import { ProfileCard, ProfileField } from '@/components/ProfileCard';
 
 interface Employee {
@@ -36,10 +35,11 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDept, setFilterDept] = useState<string>('');
+  const [filterGender, setFilterGender] = useState<string>('');
   const [email, setEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  // const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [editData, setEditData] = useState<Employee | null>(null);
@@ -58,7 +58,7 @@ export default function EmployeesPage() {
         }
 
         setEmail(user.email ?? null);
-        setUserId(user.id);
+        // setUserId(user.id);
 
         const { data: profile } = await supabase
           .from('profiles')
@@ -103,7 +103,8 @@ export default function EmployeesPage() {
     const matchesSearch = (emp.full_name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (emp.email_id ?? '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDept = !filterDept || emp.department === filterDept;
-    return matchesSearch && matchesDept;
+    const matchesGender = !filterGender || (emp.gender ?? '').toLowerCase() === filterGender;
+    return matchesSearch && matchesDept && matchesGender;
   });
 
   const departments = [...new Set(employees.map(e => e.department))];
@@ -129,7 +130,7 @@ export default function EmployeesPage() {
     return age;
   };
   const formatCurrency = (v: number | null | undefined) =>
-    v != null ? `₹${Number(v).toLocaleString('en-IN')}` : '—';
+    v != null ? `INR ${Number(v).toLocaleString('en-IN')}` : '--';
 
   // Sync editData when selected employee changes
   useEffect(() => {
@@ -192,152 +193,172 @@ export default function EmployeesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading" style={{ background: 'var(--background)' }}>
-        <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>Loading employees...</p>
+      <div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading">
+        <p className="text-sm sm:text-base" style={{ color: '#64748b' }}>Loading employees...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
+    <div className="min-h-screen flex flex-col">
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role={userRole} />
 
-      <div className="admin-notifications-fixed">
-        {userId && <Notifications role="admin" userId={userId} />}
-      </div>
-
-      <main className="admin-main">
+      <main
+        className="admin-main mt-6"
+        style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}
+      >
         <div className="w-full max-w-6xl mx-auto">
-          <PageHeader title="All Employees" subtitle="View and manage all employee profiles" />
+          <PageHeader title="All Employees" />
+          <div className="h-6" />
 
-          {/* Filters */}
-          <div className="card card-body rounded-xl p-4 sm:p-6 mb-6" style={{ borderColor: 'var(--border)' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                  Search by Name or Email
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2 text-sm rounded-lg border focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                  Filter by Department
-                </label>
-                <select
-                  value={filterDept}
-                  onChange={(e) => setFilterDept(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2 text-sm rounded-lg border focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-                >
-                  <option value="">All Departments</option>
-                  {departments.filter(Boolean).map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <p className="text-xs sm:text-sm mt-4" style={{ color: 'var(--text-secondary)' }}>
-              Showing <span className="font-semibold">{filteredEmployees.length}</span> of <span className="font-semibold">{employees.length}</span> employees
-            </p>
-          </div>
-
-          {/* Employee Cards */}
-          {filteredEmployees.length === 0 ? (
-            <div className="card card-body rounded-xl p-8 sm:p-12 text-center" style={{ borderColor: 'var(--border)' }}>
-              <p className="text-base sm:text-lg" style={{ color: 'var(--text-primary)' }}>No employees found</p>
-              <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Try adjusting your search or filters</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredEmployees.map(emp => (
+          <div className="flex flex-col lg:flex-row lg:items-center gap-6 min-h-[calc(100vh-220px)]">
+            {/* Filters */}
+            <div className="w-full lg:w-72 shrink-0">
+              <div className="sticky top-6 h-[calc(100vh-220px)]">
                 <div
-                  key={emp.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedEmployee(emp)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedEmployee(emp); } }}
-                  className="card rounded-xl overflow-hidden flex flex-row hover:shadow-md transition-shadow min-h-[120px] cursor-pointer"
-                  style={{ borderColor: 'var(--border)' }}
+                  className="card card-body rounded-xl p-4 sm:p-6 h-full flex flex-col"
+                  style={{ backgroundImage: 'linear-gradient(135deg, var(--primary) 0%, #1e40af 100%)' }}
                 >
-                  {/* Left: full-height image */}
-                  <div className="w-20 sm:w-24 flex-shrink-0 self-stretch rounded-l-xl overflow-hidden relative bg-gray-100" style={{ minHeight: 120 }}>
-                    {emp.avatar_url ? (
-                      <Image
-                        src={emp.avatar_url}
-                        alt={emp.full_name}
-                        fill
-                        className="object-cover"
-                        sizes="96px"
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-slate-100">
+                        Search by Name or Email
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Enter name or email..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-3 sm:px-4 py-2 text-sm rounded-lg outline-none transition-all bg-white/90 text-slate-900 placeholder:text-slate-500 border border-white/40 focus:ring-2 focus:ring-white/60"
                       />
-                    ) : (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center text-xl font-semibold"
-                        style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)' }}
-                      >
-                        {emp.full_name?.[0]?.toUpperCase() ?? '?'}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right: name, position, role at bottom right */}
-                  <div className="flex-1 min-w-0 flex flex-col p-3 sm:p-4 justify-between">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-sm sm:text-base truncate" style={{ color: 'var(--text-primary)' }} title={emp.full_name || undefined}>
-                          {capitalizeName(emp.full_name) || '—'}
-                        </p>
-                        <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }} title={emp.position || undefined}>
-                          {emp.position ? `(${emp.position})` : '—'}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSelectedEmployee(emp); }}
-                        className="w-7 h-7 rounded-full flex items-center justify-center border flex-shrink-0 hover:opacity-90"
-                        style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border)' }}
-                        title="View profile"
-                        aria-label={`View profile for ${emp.full_name}`}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--text-secondary)' }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                      </button>
                     </div>
-                    <div className="flex justify-end mt-2">
-                      <span
-                        className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
-                        style={rolePillStyle(emp.role || 'employee')}
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-slate-100">
+                        Filter by Department
+                      </label>
+                      <select
+                        value={filterDept}
+                        onChange={(e) => setFilterDept(e.target.value)}
+                        className="w-full px-3 sm:px-4 py-2 text-sm rounded-lg outline-none transition-all bg-white/90 text-slate-900 border border-white/40 focus:ring-2 focus:ring-white/60"
                       >
-                        {emp.role === 'hr' ? 'HR' : 'Employee'}
-                      </span>
+                        <option value="">All Departments</option>
+                        {departments.filter(Boolean).map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-slate-100">
+                        Filter by Gender
+                      </label>
+                      <select
+                        value={filterGender}
+                        onChange={(e) => setFilterGender(e.target.value)}
+                        className="w-full px-3 sm:px-4 py-2 text-sm rounded-lg outline-none transition-all bg-white/90 text-slate-900 border border-white/40 focus:ring-2 focus:ring-white/60"
+                      >
+                        <option value="">All Genders</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                      </select>
                     </div>
                   </div>
+                  <p className="text-xs sm:text-sm mt-auto pt-4 text-slate-100/80">
+                    Showing <span className="font-semibold">{filteredEmployees.length}</span> of <span className="font-semibold">{employees.length}</span> employees
+                  </p>
                 </div>
-              ))}
+              </div>
             </div>
-          )}
+
+            {/* Employee Cards */}
+            <div className="flex-1 min-h-0">
+              <div className="max-h-[calc(100vh-220px)] overflow-y-auto no-scrollbar pr-1">
+                {filteredEmployees.length === 0 ? (
+                  <div className="card card-body rounded-xl p-8 sm:p-12 text-center" style={{ borderColor: '#e2e8f0' }}>
+                    <p className="text-base sm:text-lg" style={{ color: '#1e293b' }}>No employees found</p>
+                    <p className="text-xs sm:text-sm mt-1" style={{ color: '#64748b' }}>Try adjusting your search or filters</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredEmployees.map(emp => (
+                      <div
+                        key={emp.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedEmployee(emp)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedEmployee(emp); } }}
+                        className="card employee-card rounded-xl overflow-hidden flex flex-row transition-all min-h-[120px] cursor-pointer group"
+                      >
+                        {/* Left: full-height image */}
+                        <div className="w-20 sm:w-24 flex-shrink-0 self-stretch rounded-l-xl overflow-hidden relative bg-gray-100" style={{ minHeight: 120 }}>
+                          {emp.avatar_url ? (
+                            <Image
+                              src={emp.avatar_url}
+                              alt={emp.full_name}
+                              fill
+                              className="object-cover"
+                              sizes="96px"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-xl font-semibold bg-sky-100 text-blue-600">
+                              {emp.full_name?.[0]?.toUpperCase() ?? '?'}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right: name, position, role at bottom right */}
+                        <div className="flex-1 min-w-0 flex flex-col p-3 sm:p-4 justify-between">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-sm sm:text-base truncate text-slate-800 transition-colors group-hover:text-blue-700" title={emp.full_name || undefined}>
+                                {capitalizeName(emp.full_name) || '--'}
+                              </p>
+                              <p className="text-xs mt-0.5 truncate text-slate-500 transition-colors group-hover:text-blue-600" title={emp.position || undefined}>
+                                {emp.position ? `(${emp.position})` : '--'}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setSelectedEmployee(emp); }}
+                              className="w-7 h-7 rounded-full flex items-center justify-center border border-slate-200 bg-white flex-shrink-0 hover:opacity-90"
+                              title="View profile"
+                              aria-label={`View profile for ${emp.full_name}`}
+                            >
+                              <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M8 7h9v9" />
+                              </svg>
+                            </button>
+                          </div>
+                          <div className="flex justify-end mt-2">
+                            <span
+                              className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
+                              style={rolePillStyle(emp.role || 'employee')}
+                            >
+                              {emp.role === 'hr' ? 'HR' : 'Employee'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Employee detail overlay (profile-style card) */}
           {selectedEmployee && editData && (
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-[2px]"
               onClick={() => setSelectedEmployee(null)}
               role="dialog"
               aria-modal="true"
               aria-labelledby="employee-detail-title"
             >
               <div
-                className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+                className="bg-white rounded-2xl shadow-xl border border-[var(--border)] w-full max-w-4xl max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="sticky top-0 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between z-10">
+                <div className="sticky top-0 bg-white border-b border-[var(--border)] px-4 sm:px-6 py-3 flex items-center justify-between z-10">
                   <h2 id="employee-detail-title" className="text-lg font-semibold text-slate-900">Employee details</h2>
                   <div className="flex items-center gap-2">
                     {isEditing ? (
@@ -346,8 +367,7 @@ export default function EmployeesPage() {
                           type="button"
                           onClick={handleSaveDetail}
                           disabled={saving}
-                          className="px-4 py-2 rounded-lg font-semibold text-white transition-colors disabled:opacity-50"
-                          style={{ backgroundColor: 'var(--primary)' }}
+                          className="px-4 py-2 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 btn-primary"
                         >
                           {saving ? 'Saving...' : 'Save'}
                         </button>
@@ -355,7 +375,7 @@ export default function EmployeesPage() {
                           type="button"
                           onClick={handleCancelDetail}
                           disabled={saving}
-                          className="px-4 py-2 rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50"
+                          className="px-4 py-2 rounded-lg font-semibold btn-outline transition-colors disabled:opacity-50"
                         >
                           Cancel
                         </button>
@@ -364,8 +384,7 @@ export default function EmployeesPage() {
                       <button
                         type="button"
                         onClick={() => setIsEditing(true)}
-                        className="px-4 py-2 rounded-lg font-semibold text-white transition-colors"
-                        style={{ backgroundColor: 'var(--primary)' }}
+                        className="px-4 py-2 rounded-lg font-semibold text-white transition-colors btn-primary"
                       >
                         Edit
                       </button>
@@ -373,7 +392,7 @@ export default function EmployeesPage() {
                     <button
                       type="button"
                       onClick={() => setSelectedEmployee(null)}
-                      className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                      className="p-2 rounded-lg text-slate-500 hover:bg-[var(--primary-light)] hover:text-[var(--primary)] transition-colors"
                       aria-label="Close"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -391,7 +410,7 @@ export default function EmployeesPage() {
                   )}
 
                   {/* Top Card: avatar, name, position|dep, role (pill), top right email & phone only */}
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                  <div className="rounded-xl shadow-sm border border-[var(--border)] p-6 mb-6 employee-overlay-card">
                     <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
                       <div className="shrink-0">
                         {selectedEmployee.avatar_url ? (
@@ -409,9 +428,11 @@ export default function EmployeesPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h2 className="text-lg font-semibold text-slate-900">{capitalizeName(editData.full_name) || '—'}</h2>
+                        <h2 className="text-lg font-semibold text-slate-900">{capitalizeName(editData.full_name) || '--'}</h2>
                         <p className="text-sm text-slate-500 mt-1">
-                          {[editData.position, editData.department].filter(Boolean).join(' | ') || '—'}
+                          <span className="text-[var(--primary-hover)] font-medium">{editData.department || '--'}</span>
+                          &nbsp; • &nbsp;
+                          <span className="text-[var(--primary-hover)] font-medium">{editData.position || '--'}</span>
                         </p>
                         <span
                           className="inline-block mt-2 px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
@@ -422,12 +443,12 @@ export default function EmployeesPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4 text-sm w-full sm:w-auto sm:min-w-[200px]">
                         <div>
-                          <p className="text-slate-500">Email</p>
-                          <p className="text-slate-900 font-medium mt-0.5 break-all">{editData.email_id || '—'}</p>
+                          <p className="text-[var(--primary-hover)]">Email</p>
+                          <p className="text-slate-900 font-medium mt-0.5 break-all">{editData.email_id || '--'}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500">Phone</p>
-                          <p className="text-slate-900 font-medium mt-0.5">{editData.phone || '—'}</p>
+                          <p className="text-[var(--primary-hover)]">Phone</p>
+                          <p className="text-slate-900 font-medium mt-0.5">{editData.phone || '--'}</p>
                         </div>
                       </div>
                     </div>
@@ -435,7 +456,11 @@ export default function EmployeesPage() {
 
                   {/* Personal & Professional - editable */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ProfileCard title="Personal information" onEdit={!isEditing ? () => setIsEditing(true) : undefined}>
+                    <ProfileCard
+                      title="Personal information"
+                      onEdit={!isEditing ? () => setIsEditing(true) : undefined}
+                      className="employee-overlay-card"
+                    >
                       <ProfileField
                         label="Date of birth"
                         value={
@@ -447,11 +472,11 @@ export default function EmployeesPage() {
                               className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
                             />
                           ) : (
-                            (editData.dob ? formatDate(editData.dob) : null) ?? '—'
+                            (editData.dob ? formatDate(editData.dob) : null) ?? '--'
                           )
                         }
                       />
-                      <ProfileField label="Age" value={getAgeFromDob(editData.dob) != null ? String(getAgeFromDob(editData.dob)) : '—'} />
+                      <ProfileField label="Age" value={getAgeFromDob(editData.dob) != null ? String(getAgeFromDob(editData.dob)) : '--'} />
                       <ProfileField
                         label="Gender"
                         value={
@@ -461,13 +486,12 @@ export default function EmployeesPage() {
                               onChange={e => setEditData(prev => prev ? { ...prev, gender: e.target.value || null } : prev)}
                               className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
                             >
-                              <option value="">—</option>
+                              <option value="">--</option>
                               <option value="male">Male</option>
                               <option value="female">Female</option>
-                              <option value="other">Other</option>
                             </select>
                           ) : (
-                            (editData.gender ? editData.gender.charAt(0).toUpperCase() + editData.gender.slice(1).toLowerCase() : '—')
+                            (editData.gender ? editData.gender.charAt(0).toUpperCase() + editData.gender.slice(1).toLowerCase() : '--')
                           )
                         }
                       />
@@ -480,12 +504,12 @@ export default function EmployeesPage() {
                               onChange={e => setEditData(prev => prev ? { ...prev, marital_status: e.target.value || null } : prev)}
                               className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
                             >
-                              <option value="">—</option>
+                              <option value="">--</option>
                               <option value="yes">Yes</option>
                               <option value="no">No</option>
                             </select>
                           ) : (
-                            (editData.marital_status ? editData.marital_status.charAt(0).toUpperCase() + editData.marital_status.slice(1).toLowerCase() : '—')
+                            (editData.marital_status ? editData.marital_status.charAt(0).toUpperCase() + editData.marital_status.slice(1).toLowerCase() : '--')
                           )
                         }
                       />
@@ -497,11 +521,11 @@ export default function EmployeesPage() {
                               type="text"
                               value={editData.address ?? ''}
                               onChange={e => setEditData(prev => prev ? { ...prev, address: e.target.value } : prev)}
-                              placeholder="—"
+                              placeholder="--"
                               className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
                             />
                           ) : (
-                            (editData.address && editData.address.trim()) || '—'
+                            (editData.address && editData.address.trim()) || '--'
                           )
                         }
                       />
@@ -517,12 +541,16 @@ export default function EmployeesPage() {
                               className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none resize-y"
                             />
                           ) : (
-                            (editData.education && editData.education.trim()) || '—'
+                            (editData.education && editData.education.trim()) || '--'
                           )
                         }
                       />
                     </ProfileCard>
-                    <ProfileCard title="Professional information" onEdit={!isEditing ? () => setIsEditing(true) : undefined}>
+                    <ProfileCard
+                      title="Professional information"
+                      onEdit={!isEditing ? () => setIsEditing(true) : undefined}
+                      className="employee-overlay-card"
+                    >
                       <ProfileField
                         label="Department"
                         value={
@@ -534,7 +562,7 @@ export default function EmployeesPage() {
                               className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
                             />
                           ) : (
-                            editData.department || '—'
+                            editData.department || '--'
                           )
                         }
                       />
@@ -549,7 +577,7 @@ export default function EmployeesPage() {
                               className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
                             />
                           ) : (
-                            editData.position || '—'
+                            editData.position || '--'
                           )
                         }
                       />
@@ -564,7 +592,7 @@ export default function EmployeesPage() {
                               className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
                             />
                           ) : (
-                            (editData.joining_date ? formatDate(editData.joining_date) : null) ?? '—'
+                            (editData.joining_date ? formatDate(editData.joining_date) : null) ?? '--'
                           )
                         }
                       />
@@ -581,7 +609,7 @@ export default function EmployeesPage() {
                                 const val = e.target.value;
                                 setEditData(prev => prev ? { ...prev, salary: val === '' ? null : parseFloat(val) || 0 } : prev);
                               }}
-                              placeholder="—"
+                              placeholder="--"
                               className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
                             />
                           ) : (

@@ -157,13 +157,15 @@ export default function AdminHolidayAllocationPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}
+    >
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
       <main className="admin-main">
-        <div className="max-w-4xl">
-          <LeavesNav />
-          <h1 className="text-2xl font-bold text-gray-900">Holiday allocation</h1>
-          <p className="text-gray-600 mt-1">Mark dates when the office is closed. These apply to everyone.</p>
+        <LeavesNav />
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold text-gray-900 text-left">Mark office-wide holidays that apply to all employees</h1>
 
           {loading ? (
             <div className="py-12 flex justify-center">
@@ -180,19 +182,19 @@ export default function AdminHolidayAllocationPage() {
               <button
                 type="button"
                 onClick={() => setShowAddForm(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] shadow-sm"
               >
                 Add holiday
               </button>
             ) : (
-              <form onSubmit={handleAdd} className="p-4 bg-white rounded-xl border border-gray-200 flex flex-wrap items-end gap-4">
+              <form onSubmit={handleAdd} className="p-4 rounded-xl border border-[var(--primary-muted)] bg-white/80 shadow-sm flex flex-wrap items-end gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
                   <input
                     type="date"
                     value={newDate}
                     onChange={e => setNewDate(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2"
+                    className="border border-[var(--border)] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none"
                     required
                   />
                 </div>
@@ -203,17 +205,17 @@ export default function AdminHolidayAllocationPage() {
                     value={newName}
                     onChange={e => setNewName(e.target.value)}
                     placeholder="e.g. Diwali, Christmas"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full border border-[var(--border)] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none"
                     required
                   />
                 </div>
-                <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
+                <button type="submit" disabled={saving} className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50">
                   {saving ? 'Adding...' : 'Add Holiday'}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowAddForm(false); setNewDate(''); setNewName(''); }}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 bg-white border border-[var(--border)] rounded-lg font-medium text-gray-700 hover:bg-[var(--primary-light)]/60"
                 >
                   Cancel
                 </button>
@@ -221,18 +223,19 @@ export default function AdminHolidayAllocationPage() {
             )}
           </div>
 
-          <div className="mt-6 bg-white rounded-xl border border-gray-200 overflow-x-auto admin-table-wrap">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="mt-6 bg-white/80 rounded-xl border border-[var(--primary-muted)] shadow-sm overflow-hidden admin-table-wrap">
+            <div className="overflow-x-auto max-h-[65vh] overflow-y-auto no-scrollbar">
+              <table className="min-w-full divide-y divide-[var(--primary-muted)]">
+                <thead className="bg-[var(--primary-muted)] sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Name</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Action</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-primary)] uppercase">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-primary)] uppercase">Name</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-[var(--text-primary)] uppercase">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-[var(--primary-muted)]">
                 {holidays.map(h => (
-                  <tr key={h.id}>
+                  <tr key={h.id} className="odd:bg-white even:bg-[var(--primary-light)]/40">
                     {editingId === h.id ? (
                       <>
                         <td className="px-4 py-3">
@@ -240,7 +243,7 @@ export default function AdminHolidayAllocationPage() {
                             type="date"
                             value={editDate}
                             onChange={e => setEditDate(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
+                            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:border-[var(--primary-hover)] focus:ring-2 focus:ring-[var(--primary-hover)]/30 outline-none"
                           />
                         </td>
                         <td className="px-4 py-3">
@@ -249,7 +252,7 @@ export default function AdminHolidayAllocationPage() {
                             value={editName}
                             onChange={e => setEditName(e.target.value)}
                             placeholder="Holiday name"
-                            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm w-full max-w-xs"
+                            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm w-full max-w-xs focus:border-[var(--primary-hover)] focus:ring-2 focus:ring-[var(--primary-hover)]/30 outline-none"
                           />
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -286,17 +289,25 @@ export default function AdminHolidayAllocationPage() {
                           <button
                             type="button"
                             onClick={() => startEdit(h)}
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium mr-2"
+                            className="inline-flex items-center justify-center text-[var(--primary)] hover:text-[var(--primary-hover)] mr-2"
+                            aria-label="Edit holiday"
+                            title="Edit"
                           >
-                            Edit
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDelete(h.id)}
                             disabled={deletingId === h.id}
-                            className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50"
+                            className="inline-flex items-center justify-center text-red-600 hover:text-red-700 disabled:opacity-50"
+                            aria-label="Remove holiday"
+                            title="Remove"
                           >
-                            {deletingId === h.id ? 'Removing...' : 'Remove'}
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4" />
+                            </svg>
                           </button>
                         </td>
                       </>
@@ -304,7 +315,8 @@ export default function AdminHolidayAllocationPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
             {holidays.length === 0 && (
               <div className="p-8 text-center text-gray-500 text-sm">No holidays added yet. Add a date above.</div>
             )}

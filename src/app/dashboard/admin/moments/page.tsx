@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
-import Notifications from '@/components/Notifications'
 import UpcomingBirthdays, { useUpcomingBirthdays } from '@/components/UpcomingBirthdays'
 import { useSupabase } from '@/hooks/useSupabase'
 
@@ -55,28 +54,34 @@ export default function AdminMomentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600 text-sm sm:text-base">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
+        <p className="text-sm text-slate-500">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        backgroundImage: "linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)), url('/image/bg.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <Sidebar userEmail={user.email} userName={user.userName} avatarUrl={user.avatarUrl} role="admin" />
-
-      <div className="admin-notifications-fixed">
-        {user.userId && <Notifications role="admin" userId={user.userId} />}
-      </div>
 
       <main className="admin-main">
         <div className="w-full max-w-4xl mx-auto">
-          <div className="mb-6 flex justify-end">
+          <div className="page-header mt-6 w-full">
+            <div className="-ml-2">
+              <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">Upcoming Birthdays</h1>
+            </div>
             <Link
               href="/dashboard/admin/moments/office-holidays"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:border-slate-300"
+              className="ml-auto inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:border-slate-300"
             >
-              
               View upcoming holidays
             </Link>
           </div>

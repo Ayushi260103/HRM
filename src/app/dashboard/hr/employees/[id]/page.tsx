@@ -46,8 +46,8 @@ export default function EmployeeDetailPage() {
       setEmail(user.email ?? null);
       // setUserId(user.id);
       const { data: profile } = await supabase.from('profiles').select('role, full_name, avatar_url').eq('id', user.id).single();
-      if (profile?.role !== 'admin') {
-        router.replace('/dashboard/admin/home');
+      if (profile?.role !== 'hr') {
+        router.replace('/dashboard/hr/home');
         return;
       }
       setUserName(profile?.full_name ?? null);
@@ -82,12 +82,12 @@ export default function EmployeeDetailPage() {
         className="min-h-screen flex flex-col employee-detail-page"
         style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}
       >
-        <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
+        <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
         <main className="admin-main flex items-center justify-center">
           <div className="text-center">
             <p className="text-lg">Employee not found</p>
             <Link
-              href="/dashboard/admin/employees"
+              href="/dashboard/hr/employees"
               className="mt-4 inline-block px-4 py-2 rounded-lg btn-primary"
             >
               Back to All Employees
@@ -103,7 +103,7 @@ export default function EmployeeDetailPage() {
       className="min-h-screen flex flex-col employee-detail-page"
       style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}
     >
-      <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="admin" />
+      <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
       <main className="admin-main">
         <div className="w-full max-w-4xl mx-auto">
           <PageHeader
@@ -111,7 +111,7 @@ export default function EmployeeDetailPage() {
             subtitle={employee.position ? `(${employee.position})` : undefined}
             actions={
               <Link
-                href="/dashboard/admin/employees"
+                href="/dashboard/hr/employees"
                 className="px-4 py-2 rounded-lg text-sm font-medium border btn-outline"
               >
                 Back to All Employees

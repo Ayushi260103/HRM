@@ -73,14 +73,20 @@ export default function HROfficeHolidaysPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}
+      >
         <p className="text-gray-600">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}
+    >
       <Sidebar userEmail={user.email} userName={user.userName} avatarUrl={user.avatarUrl} role="hr" />
 
       <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-8">
@@ -98,25 +104,27 @@ export default function HROfficeHolidaysPage() {
           <h1 className="text-2xl font-bold text-gray-900 mt-2">Office Holidays</h1>
           <p className="text-gray-600 mt-1 text-sm">Dates when the office is closed (within the next 3 months)</p>
 
-          <div className="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="mt-6 bg-[var(--primary-light)]/40 rounded-xl border border-[var(--primary-muted)] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-[var(--primary-muted)]">
+                <thead className="bg-[var(--primary-muted)]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-primary)] uppercase">Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-primary)] uppercase">Name</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-[var(--primary-muted)]">
                   {holidays.map(h => (
                     <tr key={h.id}>
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {new Date(h.date).toLocaleDateString('en-IN', {
-                          weekday: 'short',
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        <span className="inline-flex items-center rounded-md bg-[var(--primary)] px-2 py-1 text-xs font-semibold text-white">
+                          {new Date(h.date).toLocaleDateString('en-IN', {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">{h.name}</td>
                     </tr>
