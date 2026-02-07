@@ -31,7 +31,7 @@ const NAV_ITEMS = {
     { label: 'Profile', href: '/dashboard/hr/profile', icon: 'profile' as SidebarIconName },
   ],
   employee: [
-    { label: 'Dashboard', href: '/dashboard/employee', icon: 'dashboard' as SidebarIconName },
+    { label: 'Home', href: '/dashboard/employee/home', icon: 'dashboard' as SidebarIconName },
     { label: 'Leaves', href: '/dashboard/employee/leaves', icon: 'leaves' as SidebarIconName },
     { label: 'Payroll', href: '/dashboard/employee/payroll', icon: 'payroll' as SidebarIconName },
     { label: 'Moments That Matter', href: '/dashboard/employee/moments', icon: 'moments' as SidebarIconName },

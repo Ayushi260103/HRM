@@ -536,7 +536,29 @@ export default function HRProfilePage() {
 
             <ProfileCard title="Account information">
               <ProfileField label="Email" value={displayEmail ?? '—'} />
-              <ProfileField label="Phone" value={profile.phone ?? '—'} />
+              <ProfileField
+                label="Phone"
+                value={
+                  isEditing && editData ? (
+                    <input
+                      type="tel"
+                      value={editData.phone ?? ''}
+                      onChange={(e) =>
+                        setEditData((prev) =>
+                          prev ? { ...prev, phone: e.target.value } : prev
+                        )
+                      }
+                      placeholder="—"
+                      className="w-full text-right rounded-lg border border-slate-200 px-3 py-1.5 text-sm
+                   focus:ring-2 focus:ring-[var(--primary)]
+                   focus:border-[var(--primary)] outline-none"
+                    />
+                  ) : (
+                    profile.phone ?? '—'
+                  )
+                }
+              />
+
             </ProfileCard>
           </div>
         </div>

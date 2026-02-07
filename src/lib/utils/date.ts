@@ -44,3 +44,7 @@ export function getEndOfDayISO(clockInISO: string, useUTC = false): string {
     : new Date(y, m, day, 23, 59, 59, 999)
   return end.toISOString()
 }
+
+export function getCurrentYear(): number {
+  return new Date().getFullYear()
+}

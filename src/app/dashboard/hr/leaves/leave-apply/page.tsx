@@ -76,7 +76,7 @@ export default function HRLeaveApplyPage() {
           .eq('id', user.id)
           .single()
 
-        if (profile?.role !== 'hr' && profile?.role !== 'admin') {
+        if (profile?.role !== 'hr') {
           router.replace('/dashboard')
           return
         }
@@ -136,10 +136,10 @@ export default function HRLeaveApplyPage() {
   const handleSubmitLeaveRequest = async (e: React.FormEvent) => {
     e.preventDefault()
 
-        if (!userId || !formData.leave_type_id || !formData.reason || !formData.start_date || !formData.end_date) {
-          alert('Please fill all fields')
-          return
-        }
+    if (!userId || !formData.leave_type_id || !formData.reason || !formData.start_date || !formData.end_date) {
+      alert('Please fill all fields')
+      return
+    }
 
     if (new Date(formData.start_date) > new Date(formData.end_date)) {
       alert('End date must be after start date')
@@ -167,24 +167,24 @@ export default function HRLeaveApplyPage() {
           {
             user_id: userId,
             leave_type_id: formData.leave_type_id,
-          reason: formData.reason,
-          start_date: formData.start_date,
-          end_date: formData.end_date,
-          half_day_part: isHalfDay ? formData.half_day_part : null,
-          status: 'pending'
-        }
-      ])
-      .select()
+            reason: formData.reason,
+            start_date: formData.start_date,
+            end_date: formData.end_date,
+            half_day_part: isHalfDay ? formData.half_day_part : null,
+            status: 'pending'
+          }
+        ])
+        .select()
 
       if (!error && data) {
         setLeaveRequests([data[0], ...leaveRequests])
         setFormData({
-        leave_type_id: leaveTypes[0]?.id || '',
-        reason: '',
-        start_date: '',
-        end_date: '',
-        half_day_part: ''
-      })
+          leave_type_id: leaveTypes[0]?.id || '',
+          reason: '',
+          start_date: '',
+          end_date: '',
+          half_day_part: ''
+        })
         setShowForm(false)
         alert('Leave request submitted successfully!')
       }
@@ -273,7 +273,7 @@ export default function HRLeaveApplyPage() {
             })}
           </div>
 
-          <div className="mb-8"> 
+          <div className="mb-8">
             <button
               onClick={() => setShowForm(!showForm)}
               className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg"

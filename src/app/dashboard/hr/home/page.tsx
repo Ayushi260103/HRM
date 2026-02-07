@@ -140,7 +140,7 @@ const initialUserState: UserState = {
   userId: null,
 }
 
-export default function AdminHomePage() {
+export default function HRHomePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<UserState>(initialUserState)
@@ -441,7 +441,7 @@ export default function AdminHomePage() {
           {/* Header */}
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">
-              {getTimeBasedGreeting()}, {capitalizeName(user.userName || 'Admin')}
+              {getTimeBasedGreeting()}, {capitalizeName(user.userName || 'HR')}
             </h1>
             <p className="text-sm mt-0.5 text-slate-500">
               {dateTime}

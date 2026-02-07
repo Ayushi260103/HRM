@@ -79,7 +79,7 @@ export default function AdminMomentsPage() {
               <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">Upcoming Birthdays</h1>
             </div>
             <Link
-              href="/dashboard/admin/moments/office-holidays"
+              href="/dashboard/hr/moments/office-holidays"
               className="ml-auto inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:border-slate-300"
             >
               View upcoming holidays
