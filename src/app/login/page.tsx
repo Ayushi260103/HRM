@@ -93,7 +93,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col min-h-[100dvh]">
       <header className="border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 py-3 sm:py-4">
         <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
-          HRM
+          MAVERIX HRM SOLUTIONS
         </h1>
       </header>
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
