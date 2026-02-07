@@ -6,11 +6,19 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
+
 export const metadata: Metadata = {
   title: "MAVERIX HRM SOLUTIONS",
-  manifest: "/manifest.json",
-};
 
+  // ✅ PWA Manifest
+  manifest: "/manifest.json",
+
+  // ✅ Icons (important for install)
+  icons: {
+    icon: "/icons/icon-192x192.png",
+    apple: "/icons/icon-192x192.png",
+  },
+};
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -22,14 +30,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} font-sans antialiased`}
-      >
+      <body className={`${inter.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

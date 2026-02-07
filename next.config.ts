@@ -1,9 +1,19 @@
 import type { NextConfig } from "next";
-import withPWA from "next-pwa";
+import withPWAInit from "next-pwa";
 
-const isProd = process.env.NODE_ENV === "production";
+const withPWA = withPWAInit({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: false, // ✅ ENABLE PWA (important)
+  buildExcludes: [/middleware-manifest\.json$/],
+});
 
 const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
+
   images: {
     remotePatterns: [
       {
@@ -13,16 +23,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-
-  reactStrictMode: true,
-  poweredByHeader: false,
-  compress: true,
 };
 
-export default withPWA({
-  dest: "public",
-  disable: !isProd,        // 👈 PWA only in production
-  register: true,
-  skipWaiting: true,
-  buildExcludes: [/middleware-manifest\.json$/],
-})(nextConfig);
+export default withPWA(nextConfig);
