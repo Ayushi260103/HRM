@@ -9,10 +9,10 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico, other static assets
+     * - _next/static, _next/image
+     * - manifest.json, sw.js, workbox-*.js (PWA files)
+     * - favicon.ico, images
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|manifest.json|sw.js|workbox-.*\\.js|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

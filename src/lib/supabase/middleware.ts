@@ -49,7 +49,13 @@ export async function updateSession(request: NextRequest) {
   // Get the path of the current request, e.g., "/dashboard", "/login", etc.
   const pathname = request.nextUrl.pathname
   // Define some routes that should be accessible without authentication (public pages).
-  const publicPaths = ['/login', '/signup', '/auth/callback']
+  const publicPaths = [
+    '/login', 
+    '/signup', 
+    '/auth/callback', 
+    '/manifest.json', // Add this
+    '/icons'          // Add this if your icons are in a folder
+  ]
 
   // If there is NO user session and the current path is NOT public, redirect the user to the login page.
   if (!user && !publicPaths.some((p) => pathname.startsWith(p))) {
