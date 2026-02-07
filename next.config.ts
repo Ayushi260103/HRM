@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import withPWA from "next-pwa";
+
+const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
   images: {
@@ -10,10 +13,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
   reactStrictMode: true,
-  // Optimize production builds
   poweredByHeader: false,
   compress: true,
 };
 
-export default nextConfig;
+export default withPWA({
+  dest: "public",
+  disable: !isProd,        // 👈 PWA only in production
+  register: true,
+  skipWaiting: true,
+  buildExcludes: [/middleware-manifest\.json$/],
+})(nextConfig);
