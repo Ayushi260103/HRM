@@ -295,7 +295,7 @@ export default function HRProfilePage() {
             </div>
           )}
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 profile-header-card">
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
               <div className="shrink-0">
                 {profile.avatar_url ? (

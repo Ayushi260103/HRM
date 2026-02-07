@@ -26,7 +26,7 @@ function ProfileField({ label, value, children }: { label: string; value?: React
 
 export function ProfileCard({ title, children, onEdit, className }: ProfileCardProps) {
   return (
-    <div className={`card p-6 ${className ?? ''}`.trim()}>
+    <div className={`card p-6 profile-card-hover ${className ?? ''}`.trim()}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-slate-900 font-semibold text-sm">{title}</h3>
         {onEdit && (

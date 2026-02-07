@@ -218,6 +218,16 @@ body {
   border-right: 3px solid var(--primary-hover);
 }
 
+/* Profile cards hover accent */
+.profile-card-hover:hover {
+  border-color: var(--primary-hover);
+}
+
+/* Profile header hover accent (image/name/email section) */
+.profile-header-card:hover {
+  border-color: var(--primary-hover);
+}
+
 .employee-detail-card:hover {
   border-color: var(--primary-muted);
   box-shadow: var(--card-shadow-hover);
