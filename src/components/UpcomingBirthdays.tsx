@@ -14,7 +14,7 @@ export interface BirthdayProfile {
   upcomingDate: Date
 }
 
-function getBirthdaysInNext30Days(profiles: { id: string; full_name: string; department: string; position: string; dob: string; avatar_url?: string }[]): BirthdayProfile[] {
+function getBirthdaysInNext30Days(profiles: { id: string; full_name: string; department: string; job_title: string; dob: string; avatar_url?: string }[]): BirthdayProfile[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const in30Days = new Date(today)
@@ -31,7 +31,7 @@ function getBirthdaysInNext30Days(profiles: { id: string; full_name: string; dep
       nextBday = new Date(today.getFullYear() + 1, dob.getMonth(), dob.getDate())
     }
     if (nextBday >= today && nextBday <= in30Days) {
-      result.push({ ...p, upcomingDate: nextBday, job_title: p.position })
+      result.push({ ...p, upcomingDate: nextBday, job_title: p.job_title })
     }
   }
 

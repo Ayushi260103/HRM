@@ -701,7 +701,7 @@ export default function HRHomePage() {
                     </li>
                   ))}
                   {upcomingHolidays.length > 3 && (
-                    <li className="text-xs text-slate-500">+{upcomingHolidays.length - 3} more</li>
+                    <Link href={"/dashboard/hr/moments/office-holidays"} className="text-xs text-[var(--primary)] hover:text-[var(--primary-hover)]">+{upcomingHolidays.length - 3} more</Link>
                   )}
                 </ul>
               )}
