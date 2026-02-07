@@ -339,6 +339,9 @@ export default function EmployeeHomePage() {
                 <Link href="/dashboard/employee/leaves/leave-apply" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors w-fit">
                   Apply for leave
                 </Link>
+                <Link href="/dashboard/employee/payroll" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors w-fit">
+                  View Payroll
+                </Link>
               </div>
             </div>
 
@@ -365,7 +368,7 @@ export default function EmployeeHomePage() {
                     </li>
                   ))}
                   {upcomingHolidays.length > 3 && (
-                    <li className="text-xs text-slate-500">+{upcomingHolidays.length - 3} more</li>
+                    <Link href={"/dashboard/employee/moments/office-holidays"} className="text-xs text-[var(--primary)] hover:text-[var(--primary-hover)]">+{upcomingHolidays.length - 3} more</Link>
                   )}
                 </ul>
               )}
