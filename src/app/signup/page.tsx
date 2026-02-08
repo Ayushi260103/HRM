@@ -141,6 +141,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/hooks/useSupabase'
+import Image from 'next/image'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -214,9 +215,9 @@ const user = sessionData.session?.user
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: '#f1f5f9' }}>
       <header className="border-b border-gray-200 dark:border-gray-800 px-6 py-4">
-        <h1 className="text-xl font-semibold">HRM</h1>
+      <Image src="/image/logobg.png" alt="Maverix HRM Solutions" width={200} height={200} />
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6">
@@ -276,7 +277,7 @@ const user = sessionData.session?.user
           </form>
 
           <p className="text-center text-sm">
-            Already have an account? <Link href="/login">Log in</Link>
+            Already have an account? <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">Log in</Link>
           </p>
         </div>
       </main>

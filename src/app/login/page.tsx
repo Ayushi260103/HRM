@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/hooks/useSupabase';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -90,10 +91,10 @@ export default function LoginPage() {
   }, [supabase, router, email, password]);
 
   return (
-    <div className="min-h-screen flex flex-col min-h-[100dvh]">
+    <div className="min-h-screen flex flex-col min-h-[100dvh]" style={{ background: '#f1f5f9' }}>
       <header className="border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 py-3 sm:py-4">
         <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
-          MAVERIX HRM SOLUTIONS
+          <Image src="/image/logobg.png" alt="Maverix HRM Solutions" width={200} height={200} />
         </h1>
       </header>
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
