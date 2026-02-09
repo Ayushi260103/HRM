@@ -50,6 +50,7 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   // Define some routes that should be accessible without authentication (public pages).
   const publicPaths = [
+    '/',
     '/login', 
     '/signup', 
     '/auth/callback', 
