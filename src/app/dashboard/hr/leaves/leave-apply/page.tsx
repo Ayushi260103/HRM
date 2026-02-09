@@ -223,22 +223,27 @@ export default function HRLeaveApplyPage() {
   const selectedUsed = selectedType ? (selectedBalance?.used ?? approvedCounts[selectedType.id] ?? 0) : 0
   const selectedRemaining = Math.max(selectedAllocated - selectedUsed, 0)
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading leaves...</p></div>
+  // if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading leaves...</p></div>
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}>
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
 
       <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
-        <div className="w-full max-w-5xl">
-          <div className="mb-4 rounded-xl p-2 bg-transparent" style={{ background: 'transparent' }}>
+      <div className="w-full max-w-6xl flex flex-col flex-1 min-h-0">
+          <div className="shrink-0">
             <LeavesNav basePath="/dashboard/hr/leaves" />
           </div>
           <div className="mb-8">
             <h1 className="text-xl font-bold text-gray-900">Apply and track your leave requests</h1>
             {/* <p className="text-gray-600 mt-2">Apply and track your leave requests</p> */}
           </div>
-
+          {loading ? (
+            <div className="py-12 flex justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent" />
+            </div>
+          ) :(
+            <>
           <div className="flex items-stretch gap-6 mb-8 overflow-x-auto no-scrollbar">
             {leaveTypes.map((type, idx) => {
               const bal = balanceMap.get(type.id)
@@ -443,6 +448,7 @@ export default function HRLeaveApplyPage() {
               </div>
             )}
           </div>
+          </>)}
         </div>
       </main>
     </div>

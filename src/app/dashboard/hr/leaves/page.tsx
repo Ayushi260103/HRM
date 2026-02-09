@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-export default function AdminLeavesHomePage() {
+export default function HRLeavesHomePage() {
   const router = useRouter()
 
   useEffect(() => {

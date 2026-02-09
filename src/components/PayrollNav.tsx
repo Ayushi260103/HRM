@@ -3,19 +3,16 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-type LeavesNavProps = {
-  basePath?: '/dashboard/admin/leaves' | '/dashboard/hr/leaves'
+type PayrollNavProps = {
+  basePath?: '/dashboard/hr/payroll'
 }
 
-export default function LeavesNav({ basePath = '/dashboard/admin/leaves' }: LeavesNavProps) {
+export default function PayrollNav({ basePath = '/dashboard/hr/payroll' }: PayrollNavProps) {
   const pathname = usePathname()
 
   const tabs = [
-    { label: 'Leave Requests', href: `${basePath}/leave-requests` },
-    { label: 'Leave Allocation', href: `${basePath}/leave-allocation` },
-    { label: 'Weekend Allocation', href: `${basePath}/weekend-allocation` },
-    { label: 'Holiday Allocation', href: `${basePath}/holiday-allocation` },
-    ...(basePath === '/dashboard/hr/leaves' ? [{ label: 'Leave Apply', href: `${basePath}/leave-apply` }] : []),
+    { label: 'Employees Payroll', href: `${basePath}/employees_payroll` },
+    { label: 'HR Payroll', href: `${basePath}/hr_payroll` },
   ] as const
 
   return (
