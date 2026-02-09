@@ -262,186 +262,178 @@ export default function LeaveAllocationPage() {
 
   return (
     <div
-      className="h-screen flex flex-col overflow-hidden"
+      className="min-h-screen flex flex-col"
       style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 75%)' }}
     >
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
 
-      <main className="admin-main flex flex-col min-h-0">
-        <div className="w-full max-w-6xl flex flex-col flex-1 min-h-0">
-          <div className="shrink-0">
-            <LeavesNav basePath="/dashboard/hr/leaves" />
-          </div>
-          <div className="mb-4 shrink-0">
-            <h1 className="text-xl font-bold text-[var(--text-primary)]">Annual Leave Allocation Setup</h1>
-          </div>
+      <main className="admin-main flex flex-col flex-1">
+        <div className="w-full max-w-6xl mx-auto p-4 flex flex-col flex-1">
+          <LeavesNav basePath="/dashboard/hr/leaves" />
+
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-4">Annual Leave Allocation Setup</h1>
 
           {loading ? (
             <div className="py-12 flex justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
             </div>
           ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 lg:items-stretch">
-            {/* Leave Types - same height as right panel */}
-            <div
-              className="rounded-xl shadow-sm border border-[var(--border)] p-6 flex flex-col min-h-0"
-              style={{ backgroundImage: 'linear-gradient(45deg, #ffffff 0%, var(--primary-light) 75%)' }}
-            >
-              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4 shrink-0">Leave Types</h2>
-              <div className="space-y-3 overflow-y-auto no-scrollbar min-h-0 flex-1">
-                {leaveTypes.map(type => (
-                  <div key={type.id} className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => setSelectedTypeId(type.id)}
-                      className={`flex-1 text-left px-3 py-2 rounded-lg border ${
-                        selectedTypeId === type.id
-                          ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
-                          : 'bg-white text-slate-700 border-[var(--border)] hover:bg-[var(--primary-light)]/60'
-                      }`}
-                    >
-                      {type.name}
-                    </button>
-                    <input
-                      type="number"
-                      min={0}
-                      className="w-20 border border-[var(--border)] rounded-lg px-2 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
-                      defaultValue={type.default_balance ?? 0}
-                      onBlur={(e) => handleUpdateDefault(type.id, Number(e.target.value))}
-                    />
-                    {!type.is_system && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteType(type.id)}
-                        disabled={deletingTypeId === type.id}
-                        className="px-2 py-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                        title="Delete leave type"
-                      >
-                        {deletingTypeId === type.id ? '...' : 'Delete'}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 border-t border-[var(--border)] pt-4 shrink-0">
-                <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-2">Add Custom Type</h3>
-                <input
-                  type="text"
-                  placeholder="Type name"
-                  value={newTypeName}
-                  onChange={(e) => setNewTypeName(e.target.value)}
-                  className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm mb-2 bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="Default balance"
-                  value={newTypeDefault}
-                  onChange={(e) => setNewTypeDefault(Number(e.target.value))}
-                  className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm mb-3 bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
-                />
-                <button
-                  onClick={handleCreateType}
-                  disabled={savingType}
-                  className="w-full px-4 py-2 rounded-lg text-sm font-semibold btn-primary"
-                >
-                  {savingType ? 'Creating...' : 'Create Leave Type'}
-                </button>
-              </div>
-            </div>
-
-            {/* Allocate Balances - same height, only employee table scrolls */}
-            <div
-              className="rounded-xl shadow-sm border border-[var(--border)] p-6 lg:col-span-2 flex flex-col min-h-0"
-              style={{ backgroundImage: 'linear-gradient(45deg, #ffffff 0%, var(--primary-light) 75%)' }}
-            >
-              <div className="flex items-center justify-between mb-4 shrink-0">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Allocate Balances</h2>
-                <button
-                  onClick={handleApplyDefaults}
-                  disabled={seedingDefaults || !selectedType}
-                  className="text-sm font-semibold px-3 py-2 rounded-lg border border-[var(--primary-muted)] bg-[var(--primary-muted)] text-[var(--primary-hover)] hover:bg-[var(--primary-light)]/60"
-                >
-                  {seedingDefaults ? 'Applying...' : 'Apply Defaults To New Employees'}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 shrink-0">
-                <select
-                  value={allocationUserId}
-                  onChange={(e) => setAllocationUserId(e.target.value)}
-                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
-                >
-                  <option value="">Select user</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {capitalizeName(emp.full_name) || emp.email_id || emp.id}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedTypeId}
-                  onChange={(e) => setSelectedTypeId(e.target.value)}
-                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
-                >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+              {/* Leave Types */}
+              <div className="rounded-xl shadow-sm border border-[var(--border)] p-6 flex flex-col min-h-0">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4 shrink-0">Leave Types</h2>
+                <div className="space-y-3 overflow-y-auto no-scrollbar flex-1 min-h-0">
                   {leaveTypes.map(type => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
+                    <div key={type.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => setSelectedTypeId(type.id)}
+                        className={`flex-1 text-left px-3 py-2 rounded-lg border ${
+                          selectedTypeId === type.id
+                            ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
+                            : 'bg-white text-slate-700 border-[var(--border)] hover:bg-[var(--primary-light)]/60'
+                        }`}
+                      >
+                        {type.name}
+                      </button>
+                      <input
+                        type="number"
+                        min={0}
+                        className="w-full sm:w-20 border border-[var(--border)] rounded-lg px-2 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
+                        defaultValue={type.default_balance ?? 0}
+                        onBlur={(e) => handleUpdateDefault(type.id, Number(e.target.value))}
+                      />
+                      {!type.is_system && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteType(type.id)}
+                          disabled={deletingTypeId === type.id}
+                          className="px-2 py-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          title="Delete leave type"
+                        >
+                          {deletingTypeId === type.id ? '...' : 'Delete'}
+                        </button>
+                      )}
+                    </div>
                   ))}
-                </select>
+                </div>
 
-                <input
-                  type="number"
-                  min={0}
-                  value={allocationValue}
-                  onChange={(e) => setAllocationValue(Number(e.target.value))}
-                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
-                  placeholder="Allocated"
-                />
+                {/* Add custom type */}
+                <div className="mt-6 border-t border-[var(--border)] pt-4 shrink-0">
+                  <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-2">Add Custom Type</h3>
+                  <input
+                    type="text"
+                    placeholder="Type name"
+                    value={newTypeName}
+                    onChange={(e) => setNewTypeName(e.target.value)}
+                    className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm mb-2 bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="Default balance"
+                    value={newTypeDefault}
+                    onChange={(e) => setNewTypeDefault(Number(e.target.value))}
+                    className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm mb-3 bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
+                  />
+                  <button
+                    onClick={handleCreateType}
+                    disabled={savingType}
+                    className="w-full px-4 py-2 rounded-lg text-sm font-semibold btn-primary"
+                  >
+                    {savingType ? 'Creating...' : 'Create Leave Type'}
+                  </button>
+                </div>
               </div>
 
-              <button
-                onClick={handleAllocate}
-                disabled={savingAllocation}
-                className="mb-4 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold btn-primary w-fit"
-              >
-                {savingAllocation ? 'Saving...' : 'Save Allocation'}
-              </button>
+              {/* Allocate Balances */}
+              <div className="rounded-xl shadow-sm border border-[var(--border)] p-6 lg:col-span-2 flex flex-col min-h-0">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2 shrink-0">
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Allocate Balances</h2>
+                  <button
+                    onClick={handleApplyDefaults}
+                    disabled={seedingDefaults || !selectedType}
+                    className="text-sm font-semibold px-3 py-2 rounded-lg border border-[var(--primary-muted)] bg-[var(--primary-muted)] text-[var(--primary-hover)] hover:bg-[var(--primary-light)]/60"
+                  >
+                    {seedingDefaults ? 'Applying...' : 'Apply Defaults To New Employees'}
+                  </button>
+                </div>
 
-              <div className="flex-1 min-h-0 overflow-auto no-scrollbar border border-[var(--border)] rounded-lg bg-white/80">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-[var(--primary-muted)] border-b border-[var(--border)] sticky top-0 z-10">
-                    <tr>
-                      <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Employee</th>
-                      <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Role</th>
-                      <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Allocated</th>
-                      <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Used</th>
-                      <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Remaining</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {employees.map(emp => {
-                      const bal = balanceMap.get(emp.id)
-                      const allocated = bal?.allocated ?? selectedType?.default_balance ?? 0
-                      const used = bal?.used ?? 0
-                      const remaining = Math.max(allocated - used, 0)
-                      return (
-                        <tr key={emp.id}>
-                          <td className="px-4 py-2 text-gray-900">{capitalizeName(emp.full_name) || emp.email_id || '—'}</td>
-                          <td className="px-4 py-2 text-gray-700 capitalize">{emp.role || '—'}</td>
-                          <td className="px-4 py-2 text-gray-700">{allocated}</td>
-                          <td className="px-4 py-2 text-gray-700">{used}</td>
-                          <td className="px-4 py-2 text-gray-700">{remaining}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 shrink-0">
+                  <select
+                    value={allocationUserId}
+                    onChange={(e) => setAllocationUserId(e.target.value)}
+                    className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
+                  >
+                    <option value="">Select user</option>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>
+                        {capitalizeName(emp.full_name) || emp.email_id || emp.id}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={selectedTypeId}
+                    onChange={(e) => setSelectedTypeId(e.target.value)}
+                    className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
+                  >
+                    {leaveTypes.map(type => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <input
+                    type="number"
+                    min={0}
+                    value={allocationValue}
+                    onChange={(e) => setAllocationValue(Number(e.target.value))}
+                    className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
+                    placeholder="Allocated"
+                  />
+                </div>
+
+                <button
+                  onClick={handleAllocate}
+                  disabled={savingAllocation}
+                  className="mb-4 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold btn-primary w-fit"
+                >
+                  {savingAllocation ? 'Saving...' : 'Save Allocation'}
+                </button>
+
+                <div className="flex-1 min-h-0 overflow-auto no-scrollbar border border-[var(--border)] rounded-lg bg-white/80">
+                  <table className="min-w-full text-sm table-auto md:table-fixed">
+                    <thead className="bg-[var(--primary-muted)] border-b border-[var(--border)] sticky top-0 z-10">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Employee</th>
+                        <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Role</th>
+                        <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Allocated</th>
+                        <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Used</th>
+                        <th className="px-4 py-2 text-left font-semibold text-[var(--text-primary)]">Remaining</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {employees.map(emp => {
+                        const bal = balanceMap.get(emp.id)
+                        const allocated = bal?.allocated ?? selectedType?.default_balance ?? 0
+                        const used = bal?.used ?? 0
+                        const remaining = Math.max(allocated - used, 0)
+                        return (
+                          <tr key={emp.id}>
+                            <td className="px-4 py-2 text-gray-900">{capitalizeName(emp.full_name) || emp.email_id || '—'}</td>
+                            <td className="px-4 py-2 text-gray-700 capitalize">{emp.role || '—'}</td>
+                            <td className="px-4 py-2 text-gray-700">{allocated}</td>
+                            <td className="px-4 py-2 text-gray-700">{used}</td>
+                            <td className="px-4 py-2 text-gray-700">{remaining}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
           )}
         </div>
       </main>

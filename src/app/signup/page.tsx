@@ -162,8 +162,8 @@ export default function SignupPage() {
       return
     }
     const timezone =
-    Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC'
-  
+      Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC'
+
     setLoading(true)
 
     const { error: signUpError } = await supabase.auth.signUp({
@@ -181,9 +181,9 @@ export default function SignupPage() {
       setLoading(false)
       return
     }
-// Ensure session exists before touching DB
-const { data: sessionData } = await supabase.auth.getSession()
-const user = sessionData.session?.user
+    // Ensure session exists before touching DB
+    const { data: sessionData } = await supabase.auth.getSession()
+    const user = sessionData.session?.user
 
     if (!user) {
       setError('Check your email to confirm your account.')
@@ -218,72 +218,119 @@ const user = sessionData.session?.user
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#f1f5f9' }}>
-      <header className="border-b border-gray-200 dark:border-gray-800 px-6 py-4">
-      <Image src="/image/logobg.png" alt="Maverix HRM Solutions" width={200} height={200} />
-      </header>
+    <div className="min-h-screen flex flex-col md:flex-row bg-slate-100">
+      {/* LEFT IMAGE SECTION */}
+      <div className="relative hidden md:block md:w-3/5">
+        <Image
+          src="/image/loginpagebg.png"
+          alt="Signup background"
+          fill
+          className="object-cover"
+          priority
+        />
+      </div>
 
-      <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-sm space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-center">Create account</h2>
-            <p className="mt-1 text-sm text-center text-gray-500">
-              Your account will be reviewed by admin before access is granted.
-            </p>
+      {/* RIGHT SIGNUP SECTION */}
+      <div
+        className="relative flex-1 flex items-center justify-center"
+        style={{ background: '#f1f5f9' }}
+      >
+        {/* Mobile background image */}
+        <div className="absolute inset-0 md:hidden">
+          <Image
+            src="/image/loginpagebg.png"
+            alt="Signup background"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-[#f1f5f9]/55" />
+        </div>
+
+        {/* CONTENT */}
+        <div className="relative z-10 w-full max-w-sm px-6 py-10">
+          {/* Logo */}
+          <div className="mb-12 flex justify-center">
+            <Image
+              src="/image/logobg.png"
+              alt="Maverix HRM Solutions"
+              width={260}
+              height={80}
+              className="mx-auto drop-shadow-lg"
+              priority
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              type="text"
-              placeholder="Full name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full border px-3 py-2 rounded-md"
-              autoComplete="name"
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border px-3 py-2 rounded-md"
-            />
+          {/* Card */}
+          <div className="bg-white/95 md:bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+            <h2 className="text-2xl font-semibold text-gray-900 text-center mb-1">
+              Create account
+            </h2>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Your account will be reviewed by admin before access is granted.
+            </p>
 
-            <input
-              type="password"
-              placeholder="Password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border px-3 py-2 rounded-md"
-            />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/30 outline-none"
+                autoComplete="name"
+              />
 
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full border px-3 py-2 rounded-md"
-            />
+              <input
+                type="email"
+                placeholder="Email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/30 outline-none"
+              />
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
+              <input
+                type="password"
+                placeholder="Password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/30 outline-none"
+              />
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-md"
-            >
-              {loading ? 'Creating account…' : 'Create Account'}
-            </button>
-          </form>
+              <input
+                type="password"
+                placeholder="Confirm password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/30 outline-none"
+              />
 
-          <p className="text-center text-sm">
-            Already have an account? <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">Log in</Link>
-          </p>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+              >
+                {loading ? 'Creating account…' : 'Create account'}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link
+                href="/login"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                Log in
+              </Link>
+            </p>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   )
+
 }

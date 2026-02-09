@@ -13,7 +13,7 @@ type Holiday = {
   created_at: string
 }
 
-export default function AdminHolidayAllocationPage() {
+export default function HRHolidayAllocationPage() {
   const router = useRouter()
   const supabase = useSupabase()
   const [holidays, setHolidays] = useState<Holiday[]>([])

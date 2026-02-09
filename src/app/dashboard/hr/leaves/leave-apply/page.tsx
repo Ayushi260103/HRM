@@ -230,7 +230,7 @@ export default function HRLeaveApplyPage() {
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role="hr" />
 
       <main className="flex-1 pt-14 px-4 pb-4 sm:pt-6 sm:px-5 sm:pb-5 md:pt-6 md:px-6 md:pb-6 lg:pt-8 lg:px-8 lg:pb-8 lg:ml-64 min-w-0">
-      <div className="w-full max-w-6xl flex flex-col flex-1 min-h-0">
+        <div className="w-full max-w-6xl flex flex-col flex-1 min-h-0">
           <div className="shrink-0">
             <LeavesNav basePath="/dashboard/hr/leaves" />
           </div>
@@ -242,213 +242,221 @@ export default function HRLeaveApplyPage() {
             <div className="py-12 flex justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent" />
             </div>
-          ) :(
+          ) : (
             <>
-          <div className="flex items-stretch gap-6 mb-8 overflow-x-auto no-scrollbar">
-            {leaveTypes.map((type, idx) => {
-              const bal = balanceMap.get(type.id)
-              const allocated = bal?.allocated ?? type.default_balance ?? 0
-              const used = bal?.used ?? approvedCounts[type.id] ?? 0
-              const remaining = Math.max(allocated - used, 0)
-              const usagePct = allocated > 0 ? (used / allocated) * 100 : 0
-              const colors = ['#0ea5e9', '#f59e0b', '#10b981', '#ef4444', '#6366f1']
-              const ring = colors[idx % colors.length]
-              const ringBg = 'var(--primary-light)'
-              return (
-                <div key={type.id} className="min-w-[220px] flex flex-col items-center">
-                  <div
-                    className="w-[190px] h-[190px] rounded-full p-3"
-                    style={{
-                      backgroundImage: `conic-gradient(${ring} ${usagePct}%, ${ringBg} 0)`,
-                    }}
-                  >
-                    <div className="w-full h-full rounded-full bg-white/90 border border-[var(--primary-muted)] flex flex-col items-center justify-center text-center px-3">
-                      <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide truncate w-full">
-                        {type.name}
-                      </p>
-                      <p className="text-2xl font-bold text-slate-900 mt-1">{Math.round(usagePct)}%</p>
-                      <p className="text-xs text-slate-600 mt-1">Used: {used}</p>
-                      <p className="text-xs text-slate-600">Remaining: {remaining}</p>
-                      <p className="text-xs text-slate-600">Total: {allocated}</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2">Yearly allocation</p>
-                </div>
-              )
-            })}
-          </div>
+              <div className="flex items-stretch gap-6 mb-8 overflow-x-auto no-scrollbar">
+                {leaveTypes
+                  .filter(type => {
+                    const bal = balanceMap.get(type.id)
+                    const allocated = bal?.allocated ?? type.default_balance ?? 0
+                    return allocated > 0
+                  })
+                  .map((type, idx) => {
+                    const bal = balanceMap.get(type.id)
+                    const allocated = bal?.allocated ?? type.default_balance ?? 0
+                    const used = bal?.used ?? approvedCounts[type.id] ?? 0
+                    const remaining = Math.max(allocated - used, 0)
+                    const usagePct = allocated > 0 ? (used / allocated) * 100 : 0
+                    const colors = ['#0ea5e9', '#f59e0b', '#10b981', '#ef4444', '#6366f1']
+                    const ring = colors[idx % colors.length]
+                    const ringBg = 'var(--primary-light)'
 
-          <div className="mb-8">
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg"
-            >
-              {showForm ? 'Cancel' : 'Request a Leave'}
-            </button>
-          </div>
-
-          {showForm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="absolute inset-0 bg-slate-900/40"
-                aria-label="Close overlay"
-              />
-              <div
-                className="relative z-10 mx-auto rounded-2xl border border-[var(--primary-muted)] bg-white/90 shadow-xl w-full max-w-[760px] max-h-[90vh] overflow-y-auto"
-                style={{ boxShadow: '0 25px 50px -12px rgba(15,23,42,0.15)' }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="absolute top-3 right-3 z-10 p-1.5 rounded-lg text-slate-500 hover:bg-[var(--primary-light)] hover:text-[var(--primary)] transition-colors"
-                  aria-label="Close"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-                <div className="p-6 pt-10">
-                  <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6">Submit Leave Request</h2>
-                  {selectedRemaining <= 0 && (
-                    <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-800">
-                      {selectedType?.name || 'This'} leave is exhausted, talk to admin.
-                    </div>
-                  )}
-                  <form onSubmit={handleSubmitLeaveRequest} className="space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-sm font-semibold text-[var(--primary-hover)] mb-2">Leave Type *</label>
-                        <select
-                          value={formData.leave_type_id}
-                          onChange={(e) => setFormData({ ...formData, leave_type_id: e.target.value })}
-                          className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all bg-white"
+                    return (
+                      <div key={type.id} className="min-w-[220px] flex flex-col items-center">
+                        <div
+                          className="w-[190px] h-[190px] rounded-full p-3"
+                          style={{
+                            backgroundImage: `conic-gradient(${ring} ${usagePct}%, ${ringBg} 0)`,
+                          }}
                         >
-                          {leaveTypes.map(type => (
-                            <option key={type.id} value={type.id}>{type.name}</option>
-                          ))}
-                        </select>
+                          <div className="w-full h-full rounded-full bg-white/90 border border-[var(--primary-muted)] flex flex-col items-center justify-center text-center px-3">
+                            <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide truncate w-full">
+                              {type.name}
+                            </p>
+                            <p className="text-2xl font-bold text-slate-900 mt-1">{Math.round(usagePct)}%</p>
+                            <p className="text-xs text-slate-600 mt-1">Used: {used}</p>
+                            <p className="text-xs text-slate-600">Remaining: {remaining}</p>
+                            <p className="text-xs text-slate-600">Total: {allocated}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2">Yearly allocation</p>
                       </div>
-                      {(selectedType?.name || '').toLowerCase().includes('half') && (
-                        <div>
-                          <label className="block text-sm font-semibold text-[var(--primary-hover)] mb-2">Half Day *</label>
-                          <select
-                            value={formData.half_day_part}
-                            onChange={(e) => setFormData({ ...formData, half_day_part: e.target.value as 'first' | 'second' })}
-                            className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all bg-white"
-                          >
-                            <option value="">Select half</option>
-                            <option value="first">First Half</option>
-                            <option value="second">Second Half</option>
-                          </select>
+                    )
+                  })}
+
+              </div>
+
+              <div className="mb-8">
+                <button
+                  onClick={() => setShowForm(!showForm)}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg"
+                >
+                  {showForm ? 'Cancel' : 'Request a Leave'}
+                </button>
+              </div>
+
+              {showForm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="absolute inset-0 bg-slate-900/40"
+                    aria-label="Close overlay"
+                  />
+                  <div
+                    className="relative z-10 mx-auto rounded-2xl border border-[var(--primary-muted)] bg-white/90 shadow-xl w-full max-w-[760px] max-h-[90vh] overflow-y-auto"
+                    style={{ boxShadow: '0 25px 50px -12px rgba(15,23,42,0.15)' }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      className="absolute top-3 right-3 z-10 p-1.5 rounded-lg text-slate-500 hover:bg-[var(--primary-light)] hover:text-[var(--primary)] transition-colors"
+                      aria-label="Close"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                    <div className="p-6 pt-10">
+                      <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6">Submit Leave Request</h2>
+                      {selectedRemaining <= 0 && (
+                        <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-800">
+                          {selectedType?.name || 'This'} leave is exhausted, talk to admin.
                         </div>
                       )}
-
-                      <div>
-                        <label className="block text-sm font-semibold text-[var(--primary-hover)] mb-2">Start Date *</label>
-                        <input
-                          type="date"
-                          value={formData.start_date}
-                          onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                          className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all bg-white"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-[var(--primary-hover)] mb-2">End Date *</label>
-                        <input
-                          type="date"
-                          value={formData.end_date}
-                          onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                          className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all bg-white"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-[var(--primary-hover)] mb-2">Reason *</label>
-                      <textarea
-                        value={formData.reason}
-                        onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                        placeholder="Please provide a reason for your leave request..."
-                        className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all resize-none bg-white"
-                        rows={4}
-                        required
-                      ></textarea>
-                    </div>
-
-                    <div className="flex gap-3">
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-hover)] text-white px-6 py-2 rounded-lg font-semibold hover:from-[var(--primary-hover)] hover:to-[var(--primary)] transition-all disabled:opacity-50"
-                      >
-                        {submitting ? 'Submitting...' : 'Submit Request'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowForm(false)}
-                        className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-all"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Applied Requests ({leaveRequests.length})</h2>
-
-            {leaveRequests.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">No leave requests yet</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Click {"\""}Request a Leave{"\""} to submit your first request
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {leaveRequests.map((request) => (
-                  <div key={request.id} className="border border-[var(--border)] border-l-[4px] border-l-[var(--primary-hover)] rounded-lg p-5 bg-[var(--primary-light)]/30 shadow-md hover:shadow-lg transition-all">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-gray-900">
-                            {request.leave_type?.name || 'Leave'}
-                          </h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status)}`}>
-                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                          </span>
-                        </div>
-                        <p className="text-gray-700 text-sm mb-3">{request.reason}</p>
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
-                          <span>📅 <span className="font-medium">{new Date(request.start_date).toLocaleDateString()}</span> to <span className="font-medium">{new Date(request.end_date).toLocaleDateString()}</span></span>
-                          {request.half_day_part && (
-                            <span>⏰ <span className="font-medium">{request.half_day_part === 'first' ? 'First Half' : 'Second Half'}</span></span>
-                          )}
-                          <span>🕐 <span className="font-medium">{new Date(request.created_at).toLocaleDateString()}</span></span>
-                        </div>
-                        {request.comment && (
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
-                            <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Admin Comment</p>
-                            <p className="text-sm text-blue-900">{request.comment}</p>
+                      <form onSubmit={handleSubmitLeaveRequest} className="space-y-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <div>
+                            <label className="block text-sm font-semibold text-[var(--primary-hover)] mb-2">Leave Type *</label>
+                            <select
+                              value={formData.leave_type_id}
+                              onChange={(e) => setFormData({ ...formData, leave_type_id: e.target.value })}
+                              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all bg-white"
+                            >
+                              {leaveTypes.map(type => (
+                                <option key={type.id} value={type.id}>{type.name}</option>
+                              ))}
+                            </select>
                           </div>
-                        )}
-                      </div>
+                          {(selectedType?.name || '').toLowerCase().includes('half') && (
+                            <div>
+                              <label className="block text-sm font-semibold text-[var(--primary-hover)] mb-2">Half Day *</label>
+                              <select
+                                value={formData.half_day_part}
+                                onChange={(e) => setFormData({ ...formData, half_day_part: e.target.value as 'first' | 'second' })}
+                                className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all bg-white"
+                              >
+                                <option value="">Select half</option>
+                                <option value="first">First Half</option>
+                                <option value="second">Second Half</option>
+                              </select>
+                            </div>
+                          )}
+
+                          <div>
+                            <label className="block text-sm font-semibold text-[var(--primary-hover)] mb-2">Start Date *</label>
+                            <input
+                              type="date"
+                              value={formData.start_date}
+                              onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all bg-white"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-semibold text-[var(--primary-hover)] mb-2">End Date *</label>
+                            <input
+                              type="date"
+                              value={formData.end_date}
+                              onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all bg-white"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-[var(--primary-hover)] mb-2">Reason *</label>
+                          <textarea
+                            value={formData.reason}
+                            onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                            placeholder="Please provide a reason for your leave request..."
+                            className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all resize-none bg-white"
+                            rows={4}
+                            required
+                          ></textarea>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <button
+                            type="submit"
+                            disabled={submitting}
+                            className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-hover)] text-white px-6 py-2 rounded-lg font-semibold hover:from-[var(--primary-hover)] hover:to-[var(--primary)] transition-all disabled:opacity-50"
+                          >
+                            {submitting ? 'Submitting...' : 'Submit Request'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowForm(false)}
+                            className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
                     </div>
                   </div>
-                ))}
+                </div>
+              )}
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Applied Requests ({leaveRequests.length})</h2>
+
+                {leaveRequests.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 text-lg">No leave requests yet</p>
+                    <p className="text-gray-400 text-sm mt-2">
+                      Click {"\""}Request a Leave{"\""} to submit your first request
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {leaveRequests.map((request) => (
+                      <div key={request.id} className="border border-[var(--border)] border-l-[4px] border-l-[var(--primary-hover)] rounded-lg p-5 bg-[var(--primary-light)]/30 shadow-md hover:shadow-lg transition-all">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-gray-900">
+                                {request.leave_type?.name || 'Leave'}
+                              </h3>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status)}`}>
+                                {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 text-sm mb-3">{request.reason}</p>
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
+                              <span>📅 <span className="font-medium">{new Date(request.start_date).toLocaleDateString()}</span> to <span className="font-medium">{new Date(request.end_date).toLocaleDateString()}</span></span>
+                              {request.half_day_part && (
+                                <span>⏰ <span className="font-medium">{request.half_day_part === 'first' ? 'First Half' : 'Second Half'}</span></span>
+                              )}
+                              <span>🕐 <span className="font-medium">{new Date(request.created_at).toLocaleDateString()}</span></span>
+                            </div>
+                            {request.comment && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                                <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Admin Comment</p>
+                                <p className="text-sm text-blue-900">{request.comment}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          </>)}
+            </>)}
         </div>
       </main>
     </div>

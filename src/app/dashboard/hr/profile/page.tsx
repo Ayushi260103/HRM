@@ -334,24 +334,25 @@ export default function HRProfilePage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm w-full sm:w-auto sm:min-w-[200px]">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm w-full sm:w-auto sm:min-w-[200px]">
+                <div className="break-words">
                   <p className="text-slate-500">Email</p>
                   <p className="text-slate-900 font-medium mt-0.5">{displayEmail || '—'}</p>
                 </div>
-                <div>
+                <div className="break-words">
                   <p className="text-slate-500">Phone</p>
                   <p className="text-slate-900 font-medium mt-0.5">{profile.phone || '—'}</p>
                 </div>
-                <div>
+                <div className="break-words">
                   <p className="text-slate-500">Joining date</p>
                   <p className="text-slate-900 font-medium mt-0.5">{joiningDate || '—'}</p>
                 </div>
-                <div>
+                <div className="break-words">
                   <p className="text-slate-500">Age</p>
                   <p className="text-slate-900 font-medium mt-0.5">{getAgeFromDob(profile.dob) ?? '—'}</p>
                 </div>
               </div>
+
             </div>
           </div>
 
