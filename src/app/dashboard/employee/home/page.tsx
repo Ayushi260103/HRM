@@ -336,7 +336,7 @@ export default function EmployeeHomePage() {
             >
               <h2 className="text-sm font-semibold text-slate-900 mb-3">Quick Links</h2>
               <div className="flex flex-col gap-2">
-                <Link href="/dashboard/employee/leaves/leave-apply" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors w-fit">
+                <Link href="/dashboard/employee/leaves" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors w-fit">
                   Apply for leave
                 </Link>
                 <Link href="/dashboard/employee/payroll" className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors w-fit">

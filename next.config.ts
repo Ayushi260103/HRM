@@ -1,11 +1,13 @@
 import type { NextConfig } from "next";
 import withPWAInit from "next-pwa";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const withPWA = withPWAInit({
   dest: "public",
   register: true,
   skipWaiting: true,
-  disable: false, // ✅ ENABLE PWA (important)
+  disable: isDev, // ✅ DISABLE PWA IN DEV
   buildExcludes: [/middleware-manifest\.json$/],
 });
 

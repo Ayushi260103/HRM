@@ -33,6 +33,15 @@ export default function LoginPage() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not found');
+// ✅ Save user timezone automatically (one-time)
+const timezone =
+  Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC'
+
+  await supabase
+  .from('profiles')
+  .update({ timezone })
+  .eq('id', user.id)
+  .is('timezone', null)
 
       // Stamp daily login date in auth metadata (UTC)
       const today = new Date().toISOString().slice(0, 10);

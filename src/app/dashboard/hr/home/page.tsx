@@ -830,7 +830,7 @@ export default function HRHomePage() {
                 <h3 className="text-sm font-semibold text-slate-900 mb-4">On Leave / Week Off Today</h3>
                 <p className="text-2xl font-bold text-slate-900 tracking-tight">{onLeaveOrWeekoffToday}</p>
                 <p className="text-sm text-slate-500 mt-1">
-                  {onLeaveOrWeekoffToday === 1 ? 'employee' : 'employees'} on leave or week off
+                  {onLeaveOrWeekoffToday === 1 || onLeaveOrWeekoffToday === 0 ? 'employee' : 'employees'} on leave or week off
                 </p>
               </div>
             </div>

@@ -10,260 +10,236 @@ import { getLocalDateString, getLocalDayOfWeek } from '@/lib/utils/date'
 type DayStatus = 'holiday' | 'on_leave' | 'week_off' | null
 
 type Log = {
-    id: string
-    user_id: string
-    clock_in: string | null
-    clock_out: string | null
-    dayStatus: DayStatus
-    profile: {
-      full_name: string | null
-      role: string | null
-      department: string | null
-      position: string | null
-    } | null
-  }
-
+  id: string
+  user_id: string
+  clock_in: string | null
+  clock_out: string | null
+  dayStatus: DayStatus
+  profile: {
+    full_name: string | null
+    role: string | null
+    department: string | null
+    position: string | null
+  } | null
+}
 
 export default function AttendancePage() {
-    const router = useRouter()
-    const supabase = useSupabase()
-    const [logs, setLogs] = useState<Log[]>([])
-    const [loading, setLoading] = useState(true)
-    const [email, setEmail] = useState<string | null>(null)
-    const [userName, setUserName] = useState<string | null>(null)
-    const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const router = useRouter()
+  const supabase = useSupabase()
+  const [logs, setLogs] = useState<Log[]>([])
+  const [loading, setLoading] = useState(true)
+  const [email, setEmail] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
-    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'clocked_out' | 'not_clocked_in' | 'holiday' | 'on_leave' | 'week_off'>('all')
-    const [rangeFilter, setRangeFilter] = useState<'last_15' | 'last_30' | 'prev_month' | 'last_3_months' | 'last_6_months' | 'year' | 'custom'>('last_15')
-    const [customStart, setCustomStart] = useState('')
-    const [customEnd, setCustomEnd] = useState('')
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'active' | 'clocked_out' | 'not_clocked_in' | 'holiday' | 'on_leave' | 'week_off'
+  >('all')
 
-    const getRange = () => {
-        const now = new Date()
-        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-        const start = new Date(end)
+  const [rangeFilter, setRangeFilter] = useState<
+    'last_15' | 'last_30' | 'prev_month' | 'last_3_months' | 'last_6_months' | 'year' | 'custom'
+  >('last_15')
 
-        if (rangeFilter === 'last_15') start.setDate(start.getDate() - 15)
-        if (rangeFilter === 'last_30') start.setDate(start.getDate() - 30)
-        if (rangeFilter === 'last_3_months') start.setMonth(start.getMonth() - 3)
-        if (rangeFilter === 'last_6_months') start.setMonth(start.getMonth() - 6)
-        if (rangeFilter === 'year') {
-            start.setFullYear(end.getFullYear(), 0, 1)
-        }
-        if (rangeFilter === 'prev_month') {
-            const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-            const firstOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-            return { startISO: firstOfPrevMonth.toISOString(), endISO: firstOfThisMonth.toISOString() }
-        }
-        if (rangeFilter === 'custom' && customStart && customEnd) {
-            const startCustom = new Date(customStart)
-            const endCustom = new Date(customEnd)
-            endCustom.setDate(endCustom.getDate() + 1)
-            return { startISO: startCustom.toISOString(), endISO: endCustom.toISOString() }
-        }
+  const [customStart, setCustomStart] = useState('')
+  const [customEnd, setCustomEnd] = useState('')
 
-        return { startISO: start.toISOString(), endISO: end.toISOString() }
+  const getRange = () => {
+    const now = new Date()
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+    const start = new Date(end)
+
+    if (rangeFilter === 'last_15') start.setDate(start.getDate() - 15)
+    if (rangeFilter === 'last_30') start.setDate(start.getDate() - 30)
+    if (rangeFilter === 'last_3_months') start.setMonth(start.getMonth() - 3)
+    if (rangeFilter === 'last_6_months') start.setMonth(start.getMonth() - 6)
+    if (rangeFilter === 'year') start.setFullYear(end.getFullYear(), 0, 1)
+
+    if (rangeFilter === 'prev_month') {
+      const firstThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      const firstPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      return { startISO: firstPrevMonth.toISOString(), endISO: firstThisMonth.toISOString() }
     }
 
-    useEffect(() => {
-        const loadLogs = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-
-            if (!user) {
-                router.replace('/login')
-                return
-            }
-
-            setEmail(user.email ?? null)
-
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role, status, full_name, avatar_url')
-                .eq('id', user.id)
-                .single()
-
-            if (profile?.status !== 'active') {
-                router.replace('/pending-approval')
-                return
-            }
-
-            if (profile?.role !== 'hr') {
-                router.replace('/dashboard')
-                return
-            }
-
-            setUserName(profile?.full_name ?? null)
-            setAvatarUrl(profile?.avatar_url ?? null)
-
-            
-
-            const getLocalDayRange = () => {
-                const now = new Date()
-                const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-                const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-                return { startISO: start.toISOString(), endISO: end.toISOString() }
-            }
-
-            const { startISO, endISO } = getLocalDayRange()
-
-            // 1️⃣ Get all employee profiles
-            const { data: profiles, error: profileError } = await supabase
-                .from('profiles')
-                .select('id, full_name, role, department, position')
-                .eq('role', 'employee')
-
-            if (profileError || !profiles) {
-                if (profileError) console.error(profileError)
-                setLogs([])
-                setLoading(false)
-                return
-            }
-
-            const todayStr = getLocalDateString()
-            const dayOfWeek = getLocalDayOfWeek()
-            const userIds = profiles.map(p => p.id)
-
-            // 2️⃣ Is today an office holiday?
-            const { data: holidayRow } = await supabase
-                .from('office_holidays')
-                .select('id')
-                .eq('date', todayStr)
-                .maybeSingle()
-            const isHoliday = !!holidayRow
-
-            // 3️⃣ User weekends (user_id -> weekend_days array)
-            const { data: userWeekendsRows } = await supabase
-                .from('user_weekends')
-                .select('user_id, weekend_days')
-                .in('user_id', userIds)
-            const userWeekOff = new Set<string>()
-            for (const row of userWeekendsRows ?? []) {
-                const days = (row.weekend_days ?? []) as number[]
-                if (days.includes(dayOfWeek)) userWeekOff.add(row.user_id)
-            }
-
-            // 4️⃣ Approved leave covering today
-            const { data: leaveRows } = await supabase
-                .from('leave_requests')
-                .select('user_id')
-                .eq('status', 'approved')
-                .lte('start_date', todayStr)
-                .gte('end_date', todayStr)
-                .in('user_id', userIds)
-            const userOnLeave = new Set((leaveRows ?? []).map(r => r.user_id))
-
-            // 5️⃣ Get today's attendance logs
-            const { data: attendance, error } = await supabase
-                .from('attendance_logs')
-                .select('id, user_id, clock_in, clock_out')
-                .gte('clock_in', startISO)
-                .lt('clock_in', endISO)
-                .order('clock_in', { ascending: false })
-
-            if (error || !attendance) {
-                setLoading(false)
-                return
-            }
-
-            // 6️⃣ Build lookup map of latest log per user
-            const attendanceMap: Record<string, typeof attendance[number]> = {}
-            for (const log of attendance) {
-                if (!attendanceMap[log.user_id]) {
-                    attendanceMap[log.user_id] = log
-                }
-            }
-
-            // 7️⃣ Merge profiles + today's attendance + day status (priority: holiday > on_leave > week_off)
-            const mergedLogs: Log[] = profiles.map(profile => {
-                const log = attendanceMap[profile.id]
-                let dayStatus: DayStatus = null
-                if (isHoliday) dayStatus = 'holiday'
-                else if (userOnLeave.has(profile.id)) dayStatus = 'on_leave'
-                else if (userWeekOff.has(profile.id)) dayStatus = 'week_off'
-                return {
-                    id: log?.id ?? `${profile.id}-today`,
-                    user_id: profile.id,
-                    clock_in: log?.clock_in ?? null,
-                    clock_out: log?.clock_out ?? null,
-                    dayStatus,
-                    profile,
-                }
-            })
-
-            setLogs(mergedLogs)
-            setLoading(false)   
-        }
-
-        loadLogs()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase is stable from useSupabase
-    }, [router])
-
-    const filteredLogs = logs.filter(log => {
-        if (statusFilter === 'all') return true
-        if (statusFilter === 'holiday') return log.dayStatus === 'holiday'
-        if (statusFilter === 'on_leave') return log.dayStatus === 'on_leave'
-        if (statusFilter === 'week_off') return log.dayStatus === 'week_off'
-        if (statusFilter === 'not_clocked_in') return !log.dayStatus && !log.clock_in
-        if (statusFilter === 'active') return !log.dayStatus && !!log.clock_in && !log.clock_out
-        return !log.dayStatus && !!log.clock_in && !!log.clock_out
-    })
-
-    const downloadReport = () => {
-        const run = async () => {
-            const { startISO, endISO } = getRange()
-
-            const { data: attendance, error } = await supabase
-                .from('attendance_logs')
-                .select('id, user_id, clock_in, clock_out')
-                .gte('clock_in', startISO)
-                .lt('clock_in', endISO)
-                .order('clock_in', { ascending: true })
-
-            if (error || !attendance) return
-
-            const userIds = [...new Set(attendance.map(log => log.user_id).filter(Boolean))]
-            const { data: profiles } = await supabase
-                .from('profiles')
-                .select('id, full_name, role, department, position')
-                .in('id', userIds)
-
-            const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p]))
-
-            const header = ['Employee', 'Designation', 'Department', 'Clock In', 'Clock Out', 'Status']
-            const rows = attendance.map(log => {
-                const status = !log.clock_in
-                    ? 'Not Clocked In'
-                    : log.clock_out
-                        ? 'Clocked Out'
-                        : 'Active'
-                const profile = profileMap[log.user_id]
-                return [
-                    profile?.full_name || '',
-                    profile?.position || '',
-                    profile?.department || '',
-                    log.clock_in ? new Date(log.clock_in).toLocaleString() : '',
-                    log.clock_out ? new Date(log.clock_out).toLocaleString() : '',
-                    status,
-                ]
-            })
-
-            const csv = [header, ...rows]
-                .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-                .join('\n')
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.href = url
-            link.download = 'attendance-report.csv'
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            URL.revokeObjectURL(url)
-        }
-
-        void run()
+    if (rangeFilter === 'custom' && customStart && customEnd) {
+      const s = new Date(customStart)
+      const e = new Date(customEnd)
+      e.setDate(e.getDate() + 1)
+      return { startISO: s.toISOString(), endISO: e.toISOString() }
     }
+
+    return { startISO: start.toISOString(), endISO: end.toISOString() }
+  }
+
+  useEffect(() => {
+    const loadLogs = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return router.replace('/login')
+
+      setEmail(user.email ?? null)
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, status, full_name, avatar_url')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.status !== 'active') return router.replace('/pending-approval')
+      if (profile?.role !== 'hr') return router.replace('/dashboard')
+
+      setUserName(profile.full_name ?? null)
+      setAvatarUrl(profile.avatar_url ?? null)
+
+      const now = new Date()
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, role, department, position')
+        .eq('role', 'employee')
+
+      if (!profiles) return setLoading(false)
+
+      const todayStr = getLocalDateString()
+      const dayOfWeek = getLocalDayOfWeek()
+      const userIds = profiles.map(p => p.id)
+
+      const { data: holidayRow } = await supabase
+        .from('office_holidays')
+        .select('id')
+        .eq('date', todayStr)
+        .maybeSingle()
+
+      const { data: userWeekends } = await supabase
+        .from('user_weekends')
+        .select('user_id, weekend_days')
+        .in('user_id', userIds)
+
+      const weekOff = new Set(
+        (userWeekends ?? []).filter(w => w.weekend_days?.includes(dayOfWeek)).map(w => w.user_id)
+      )
+
+      const { data: leaves } = await supabase
+        .from('leave_requests')
+        .select('user_id')
+        .eq('status', 'approved')
+        .lte('start_date', todayStr)
+        .gte('end_date', todayStr)
+        .in('user_id', userIds)
+
+      const onLeave = new Set((leaves ?? []).map(l => l.user_id))
+
+      const { data: attendanceRaw, error } = await supabase
+      .from('attendance_logs')
+      .select('id, user_id, clock_in, clock_out')
+      .gte('clock_in', start.toISOString())
+      .lt('clock_in', end.toISOString())
+      .order('clock_in', { ascending: false })
+    
+    const attendance = attendanceRaw ?? []
+    
+
+      const map: Record<string, typeof attendance[number]> = {}
+      for (const log of attendance ?? []) {
+        if (!map[log.user_id]) map[log.user_id] = log
+      }
+
+      setLogs(
+        profiles.map(p => ({
+          id: map[p.id]?.id ?? `${p.id}-today`,
+          user_id: p.id,
+          clock_in: map[p.id]?.clock_in ?? null,
+          clock_out: map[p.id]?.clock_out ?? null,
+          dayStatus: holidayRow
+            ? 'holiday'
+            : onLeave.has(p.id)
+              ? 'on_leave'
+              : weekOff.has(p.id)
+                ? 'week_off'
+                : null,
+          profile: p,
+        }))
+      )
+
+      setLoading(false)
+    }
+
+    loadLogs()
+  }, [router, supabase])
+
+  const filteredLogs = logs.filter(log => {
+    if (statusFilter === 'all') return true
+    if (statusFilter === 'holiday') return log.dayStatus === 'holiday'
+    if (statusFilter === 'on_leave') return log.dayStatus === 'on_leave'
+    if (statusFilter === 'week_off') return log.dayStatus === 'week_off'
+    if (statusFilter === 'not_clocked_in') return !log.dayStatus && !log.clock_in
+    if (statusFilter === 'active') return !log.dayStatus && !!log.clock_in && !log.clock_out
+    return !log.dayStatus && !!log.clock_in && !!log.clock_out
+  })
+
+  /* ============================
+     ✅ FIXED CSV EXPORT
+     ============================ */
+  const downloadReport = () => {
+    const run = async () => {
+      const { startISO, endISO } = getRange()
+
+      const { data: attendance } = await supabase
+        .from('attendance_logs')
+        .select('user_id, clock_in, clock_out')
+        .gte('clock_in', startISO)
+        .lt('clock_in', endISO)
+        .order('clock_in', { ascending: false })
+
+      if (!attendance) return
+
+      // 🔒 DEDUPE: one row per user per day
+      const map = new Map<string, typeof attendance[number]>()
+
+      for (const log of attendance) {
+        const day = new Date(log.clock_in!).toISOString().slice(0, 10)
+        const key = `${log.user_id}-${day}`
+        if (!map.has(key)) map.set(key, log)
+      }
+
+      const rowsData = Array.from(map.values())
+      const userIds = [...new Set(rowsData.map(r => r.user_id))]
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, department, position')
+        .in('id', userIds)
+
+      const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
+
+      const header = ['Employee', 'Designation', 'Department', 'Clock In', 'Clock Out', 'Status']
+      const rows = rowsData.map(log => {
+        const profile = profileMap[log.user_id]
+        return [
+          profile?.full_name ?? '',
+          profile?.position ?? '',
+          profile?.department ?? '',
+          log.clock_in ? new Date(log.clock_in).toLocaleString() : '',
+          log.clock_out ? new Date(log.clock_out).toLocaleString() : '',
+          log.clock_out ? 'Clocked Out' : 'Active',
+        ]
+      })
+
+      const csv = [header, ...rows]
+        .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+        .join('\n')
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'attendance-report.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+
+    void run()
+  }
 
     const statusTabs = [
         { key: 'all' as const, label: 'All' },

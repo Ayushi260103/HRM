@@ -161,7 +161,9 @@ export default function SignupPage() {
       setError('Passwords do not match')
       return
     }
-
+    const timezone =
+    Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC'
+  
     setLoading(true)
 
     const { error: signUpError } = await supabase.auth.signUp({
@@ -199,6 +201,7 @@ const user = sessionData.session?.user
           email_id: email.trim() || null,
           role: null,
           status: 'pending',
+          timezone,
         },
         { onConflict: 'id' }
       )

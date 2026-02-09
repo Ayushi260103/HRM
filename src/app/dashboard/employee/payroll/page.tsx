@@ -126,7 +126,7 @@ export default function EmployeePayrollPage() {
                   <div className="mt-6 pt-6 border-t border-[var(--border)] w-full space-y-4">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-[var(--text-muted)] flex items-center gap-2"><Award size={14}/> Exp.</span>
-                      <span className="font-semibold">{record.years_of_experience} Years</span>
+                      <span className="font-semibold">{record.years_of_experience} {record.years_of_experience > 1 ? 'Years' : 'Year'}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-[var(--text-muted)] flex items-center gap-2"><Calendar size={14}/> Joined</span>
