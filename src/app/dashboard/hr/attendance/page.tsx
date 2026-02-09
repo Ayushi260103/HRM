@@ -129,7 +129,7 @@ export default function AttendancePage() {
 
       const onLeave = new Set((leaves ?? []).map(l => l.user_id))
 
-      const { data: attendanceRaw, error } = await supabase
+      const { data: attendanceRaw } = await supabase
       .from('attendance_logs')
       .select('id, user_id, clock_in, clock_out')
       .gte('clock_in', start.toISOString())
