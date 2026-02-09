@@ -90,11 +90,12 @@ export default function EmployeePayrollPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--background)]">
+    <div className="h-screen flex bg-[var(--background)]"
+    style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}>
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role={userRole} />
 
       {/* Main content using the .admin-main class from your CSS */}
-      <main className="admin-main">
+      <main className="admin-main flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto mt-6">
           
           {/* Header Section */}

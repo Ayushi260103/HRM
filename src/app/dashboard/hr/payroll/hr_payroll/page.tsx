@@ -92,12 +92,12 @@ export default function HRPayrollPage() {
   // }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--background)]"
+    <div className="h-screen flex bg-[var(--background)]"
     style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, var(--primary-light) 80%)' }}>
       <Sidebar userEmail={email} userName={userName} avatarUrl={avatarUrl} role={userRole} />
 
       {/* Main content using the .admin-main class from your CSS */}
-      <main className="admin-main">
+      <main className="admin-main flex-1 overflow-y-auto">
       <div className="w-full max-w-6xl flex flex-col flex-1 min-h-0">
           <div className="shrink-0">
             <PayrollNav basePath="/dashboard/hr/payroll" />
