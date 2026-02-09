@@ -360,6 +360,7 @@ export default function HRHomePage() {
         .from('leave_requests')
         .select('id, user_id, start_date, end_date, reason, created_at, leave_type:leave_types(name)', { count: 'exact' })
         .eq('status', 'pending')
+        .eq('role', 'employee')
         .order('created_at', { ascending: false })
         .limit(1)
       if (!cancelled) {
@@ -371,6 +372,7 @@ export default function HRHomePage() {
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, full_name')
+          .eq('role', 'employee')
           .in('id', userIds)
         const profileMap = new Map(profiles?.map((p) => [p.id, p]) || [])
         const enriched = {

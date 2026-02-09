@@ -368,8 +368,8 @@ export default function AttendancePage() {
                                                     <td className="px-4 py-3 text-slate-900 font-medium whitespace-nowrap">{capitalizeName(log.profile?.full_name) || '—'}</td>
                                                     <td className="px-4 py-3 text-[var(--primary-hover)] font-medium whitespace-nowrap">{log.profile?.position || '—'}</td>
                                                     <td className="px-4 py-3 text-[var(--primary-hover)] font-medium whitespace-nowrap">{log.profile?.department || '—'}</td>
-                                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-sm">{log.clock_in ? new Date(log.clock_in).toLocaleString() : '—'}</td>
-                                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-sm">{log.clock_out ? new Date(log.clock_out).toLocaleString() : '—'}</td>
+                                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-sm">{log.clock_in ? new Date(log.clock_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '—'}</td>
+                                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-sm">{log.clock_out ? new Date(log.clock_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '—'}</td>
                                                     <td className="px-4 py-3">
                                                         {log.dayStatus === 'holiday' ? (
                                                             <span className="badge-common px-2.5 py-1 rounded-md bg-purple-50 text-purple-500 border border-purple-200">Holiday</span>

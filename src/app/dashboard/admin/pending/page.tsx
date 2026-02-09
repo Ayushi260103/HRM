@@ -259,7 +259,7 @@ export default function PendingRequestsPage() {
                   {recentlyApproved.length === 0 ? (
                     <div className="card card-body p-4 text-sm text-slate-500">No approved requests yet.</div>
                   ) : (
-                    recentlyApproved.map(user => (
+                    recentlyApproved.slice(0, 3).map(user => (
                       <div
                         key={user.id}
                         className="card card-body p-4 border border-slate-200 bg-white transition-colors approved-card"
@@ -282,7 +282,7 @@ export default function PendingRequestsPage() {
                   {recentlyRejected.length === 0 ? (
                     <div className="card card-body p-4 text-sm text-slate-500">No rejected requests yet.</div>
                   ) : (
-                    recentlyRejected.map(user => (
+                    recentlyRejected.slice(0, 3).map(user => (
                       <div
                         key={user.id}
                         className="card card-body p-4 border border-slate-200 bg-white transition-colors rejected-card"
