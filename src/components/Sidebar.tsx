@@ -76,9 +76,11 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
         } lg:translate-x-0 overflow-y-auto`}
         style={{ borderColor: 'var(--border)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)' }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-white/70 to-white/90" />
+        <div className="relative min-h-full">
+  <div className="absolute inset-0 bg-gradient-to-b from-white/80 to-white pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col h-full">
+  <div className="relative z-10 flex flex-col min-h-full">
+
           {/* Logo/Brand */}
           <div className="py-5 px-3 border-b" style={{ borderColor: 'var(--border)' }}>
             {/* <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>HRM</h1>
@@ -133,12 +135,13 @@ export default function Sidebar({ userEmail, userName, avatarUrl, role }: Sideba
             )}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors duration-150"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-[var(--primary)] transition-colors duration-150"
             >
               <IconLogout />
               <span>Log out</span>
             </button>
           </div>
+        </div>
         </div>
       </aside>
 
