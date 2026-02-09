@@ -12,7 +12,30 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const handleForgotPassword = async () => {
+    setError(null);
+    setResetMessage(null);
+
+    if (!email) {
+      setError('Please enter your email first.');
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    setResetMessage('Password reset link sent. Please check your email.');
+  };
+
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,9 +204,23 @@ export default function LoginPage() {
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/30 outline-none"
                 />
               </div>
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-sm font-medium text-[#2563eb] hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
+
 
               {error && (
                 <p className="text-sm text-red-600">{error}</p>
+              )}
+              
+              {resetMessage && (
+                <p className="text-sm text-green-600">{resetMessage}</p>
               )}
 
               <button
