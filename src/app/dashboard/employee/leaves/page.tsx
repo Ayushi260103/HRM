@@ -324,38 +324,9 @@ export default function LeavesPage() {
                           onChange={(e) => setFormData({ ...formData, leave_type_id: e.target.value })}
                           className="w-full px-4 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] outline-none transition-all bg-white"
                         >
-                          {leaveTypes.map((type, idx) => {
-                              const bal = balanceMap.get(type.id)
-                              const allocated = bal?.allocated ?? type.default_balance ?? 0
-                              const used = bal?.used ?? approvedCounts[type.id] ?? 0
-                              const remaining = Math.max(allocated - used, 0)
-                              const usagePct = allocated > 0 ? (used / allocated) * 100 : 0
-                              const colors = ['#0ea5e9', '#f59e0b', '#10b981', '#ef4444', '#6366f1']
-                              const ring = colors[idx % colors.length]
-                              const ringBg = 'var(--primary-light)'
-
-                              return (
-                                <div key={type.id} className="min-w-[220px] flex flex-col items-center">
-                                  <div
-                                    className="w-[190px] h-[190px] rounded-full p-3"
-                                    style={{
-                                      backgroundImage: `conic-gradient(${ring} ${usagePct}%, ${ringBg} 0)`,
-                                    }}
-                                  >
-                                    <div className="w-full h-full rounded-full bg-white/90 border border-[var(--primary-muted)] flex flex-col items-center justify-center text-center px-3">
-                                      <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide truncate w-full">
-                                        {type.name}
-                                      </p>
-                                      <p className="text-2xl font-bold text-slate-900 mt-1">{Math.round(usagePct)}%</p>
-                                      <p className="text-xs text-slate-600 mt-1">Used: {used}</p>
-                                      <p className="text-xs text-slate-600">Remaining: {remaining}</p>
-                                      <p className="text-xs text-slate-600">Total: {allocated}</p>
-                                    </div>
-                                  </div>
-                                  <p className="text-xs text-slate-500 mt-2">Yearly allocation</p>
-                                </div>
-                              )
-                            })}
+                         {leaveTypes.map(type => (
+                                <option key={type.id} value={type.id}>{type.name}</option>
+                              ))}
 
                         </select>
                       </div>
